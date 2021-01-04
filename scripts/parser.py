@@ -3,7 +3,10 @@ import numpy as np
 import math
 
 
-def laser_parser(scan_data):
+def laser_parser(scan_data, state):
+    #Assembles all points detected by LiDAR in an array
+    #Each point described by x,y coordinates
+    #These coordinates are from the perspective of the car
     laser_points = []
     ranges = scan_data.ranges
     angle_min = scan_data.angle_min
@@ -13,7 +16,7 @@ def laser_parser(scan_data):
         x = ranges[i] * math.sin(angle_min + i * angle_increment)
         y = ranges[i] * math.cos(angle_min + i * angle_increment)
         laser_points.append([x, y])
-    return np.asarray(laser_points)
+    state.cur_points = np.asarray(laser_points)
 
 def odom_parser(data, state):
     #data is the odom message from ROS
