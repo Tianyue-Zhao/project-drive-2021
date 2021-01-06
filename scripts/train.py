@@ -16,6 +16,8 @@ class State:
         self.theta = 0.0
         self.velocity = 0.0
         self.angular_vel = 0.0
+        self.crash_det = False
+        self.lap_finish = False
 
 #collision detection function
 #returns true if it determines the car has crashed
