@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import rospy
 import parser
 import json
@@ -26,6 +27,21 @@ class State:
 #returns true if it determines the car has crashed
 #this will be used to trigger a simulator reset
 def col_detect(state):
+    dist_threshold = 0.2    #this is the threshold to determine if an object is
+                            #so close as to hit the agent
+    #this loop iterates over each point in the LaserScan and finds the distance
+    #if the distance is smaller than the threshold it announces a crash
+    for point in state.cur_points:
+        x = point[0]
+        y = point[1]
+        dist = math.sqrt(x**2 + y**2)
+        if dist < dist_threshold :
+            state.crash_det = True
+            return True
+    #if none of the points are too close, no crash detected
+    return False
+
+
 
 #Parameters such as save path, steps to train
 #and load from path to be added later
