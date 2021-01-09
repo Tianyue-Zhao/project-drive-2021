@@ -10,15 +10,6 @@ from std_msgs.msg import Bool
 import numpy as np
 
 # TODO: consider moving these parameters to train.py
-# Hyperparameters
-# number of choices for velocity of car
-NUM_VEL_CHOICES = 10
-# range of velocity of car, in m/s
-RANGE_VEL = (float(2), float(10))
-# number of choices for number of turning angle options
-NUM_TURN_ANG = 10
-# range of turning angles, negative is turning left. In degrees
-RANGE_TURN_ANG = (float(-30), float(30))
 # time delay to get next step. In seconds
 NEXT_STATE_DELAY = 0.5
 # dummpy control topic
@@ -50,6 +41,7 @@ class PD_Environment:
         self.ack_pub = rospy.Publisher(
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
         )
+        self.cfg = self.main_states.configs
 
     def init_actions(self):
         """ Helper function that creates a dictionary of actions for the agent 
@@ -61,12 +53,12 @@ class PD_Environment:
         agent_actions = {"velocity": [], "turning_angle": []}
         # velocity and turn_ang are currently lists for convenience.
         agent_actions["velocity"] = np.arange(
-            RANGE_VEL[0], RANGE_VEL[1], (RANGE_VEL[1] - RANGE_VEL[0]) / NUM_VEL_CHOICES
+            self.cfg['VLOW'], self.cfg['VHIGH'], (self.cfg['VHIGH'] - self.cfg['VLOW']) / self.cfg['NUM_VEL_CHOICES'] 
         ).tolist()
         agent_actions["turnig_angle"] = np.arange(
-            RANGE_TURN_ANG[0],
-            RANGE_TURN_ANG[1],
-            (RANGE_TURN_ANG[1] - RANGE_TURN_ANG[0]) / NUM_TURN_ANG,
+            self.cfg['ANGL'],
+            self.cfg['ANGR'],
+            (self.cfg['ANGR'] - self.cfg['ANGL']) / self.cfg['NUM_TURN_ANG'],
         ).tolist()
         return agent_actions
 
