@@ -121,7 +121,7 @@ class PD_Environment:
         return self.main_state, terminal, reward
 
     def states(self):
-        return {'typee': 'float', 'shape': (5,)}
+        return {'type': 'float', 'shape': (5,)}
 
     #A terminal state reached if the car has crashed
     #or a lap had been finished
@@ -131,6 +131,13 @@ class PD_Environment:
     #This should override whatever default close function there is
     #Publish a message for the simulator to reset, and wait
     def close(self):
+        message = Bool()
+        message.data = True
+        self.RS.publish(message)
+        time.sleep(self.main_state.configs["RS_wait"])
+        super().close()
+
+    def reset(self):
         message = Bool()
         message.data = True
         self.RS.publish(message)
