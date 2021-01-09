@@ -38,9 +38,8 @@ class PD_Environment:
     def __init__(self, RS_pub, D_pub, main_state):
         self.RS = RS_pub
         self.D = D_pub
-        self.main_state = main_state
         # next state of the agent after taking an action
-        self.next_state = train.State()
+        self.main_state = main_state
         # ros rate that controls the frequency of reading messages.
         self.rate = rospy.Rate(1.0 / NEXT_STATE_DELAY)
         # Actions to be taken by agent, containing two categories of actions:
@@ -51,7 +50,6 @@ class PD_Environment:
         self.ack_pub = rospy.Publisher(
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
         )
-        self.odom_listenr = rospy.Subscriber(ODOM_TOPIC, Odometry, self.odom_callback)
 
     def init_actions(self):
         """ Helper function that creates a dictionary of actions for the agent 
@@ -85,11 +83,6 @@ class PD_Environment:
         """
         # TODO: impliment the reward function
         return 0.0
-
-    # FIXME: I don't know whether self will messs up the callback or not
-    def odom_callback(self, data):
-        # use parser to construct next_state
-        parser.odom_parser(data, self.next_state)
 
     def get_next_state(self, actions):
         """ Helper function for execute. publishes velocity and turning angle 
@@ -133,12 +126,20 @@ class PD_Environment:
         # currently using the given terminal method.
         # TODO:handle return option 2 (environment aborted)
         terminal = self.terminal()
-        return self.next_state, terminal, reward
+        return self.main_state, terminal, reward
 
-    # This should override whatever default close function these is
-    # Publish a message for the simulator to reset, and wait
+    def states(self):
+        return {'typee': 'float', 'shape': (5,)}
+
+    #A terminal state reached if the car has crashed
+    #or a lap had been finished
+    def terminal(self):
+        return self.main_state.crash_det or self.main_state.lap_finish
+
+    #This should override whatever default close function there is
+    #Publish a message for the simulator to reset, and wait
     def close(self):
         message = Bool()
         message.data = True
         self.RS.publish(message)
-        time.sleep(1)
+        time.sleep(self.main_state.configs["RS_wait"])

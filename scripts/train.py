@@ -2,6 +2,7 @@ import numpy as np
 import math
 import rospy
 import parser
+import json
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -19,6 +20,8 @@ class State:
         self.angular_vel = 0.0
         self.crash_det = False
         self.lap_finish = False
+        self.lap_time = 0.0
+        self.configs = 0.0
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -53,6 +56,10 @@ def train():
     drive_announce = rospy.Publisher(CONTROL_TOPIC, AckermannDriveStamped, queue_size=1)
     reset_announce = rospy.Publisher(RESET_TOPIC, Bool, queue_size=1)
     #Publish True to reset_announce to reset the simulator
+    #Load config
+    config_file = open(CONFIG_FILE)
+    main_state.configs = json.load(config_file)
+    config_file.close()
 
 #"Main function" here
 #Handle flags from command line
