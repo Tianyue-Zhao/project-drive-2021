@@ -9,6 +9,10 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
 
+#One state object is declared in train.py
+#This is passed by reference to all listeners and the tf environment
+#Includes all RL state information and auxiliary info
+#Updated by listeners
 class State:
     def __init__(self):
         #initialize state with empty variables
@@ -36,6 +40,7 @@ def col_detect(state):
     found = False
     #this loop iterates over each point in the LaserScan and finds the distance
     #if the distance is smaller than the threshold it updates the found variable
+    #TODO: can be streamlined with Numpy. Ok for now.
     for point in state.cur_points:
         x = point[0]
         y = point[1]
