@@ -40,14 +40,14 @@ def col_detect(state):
         if dist < dist_threshold :
             found = True
     #if none of the points are too close, no crash detected
-    if found :
+    if found:
         state.col_counter += 1
     else:
         #if no crash detected, reset the counter
         state.col_counter = 0
 
     #if the agent is "stopped" increment counter, else reset it
-    if state.velocity < v_threshold :
+    if state.velocity < v_threshold:
         state.v_counter += 1
     else:
         state.v_counter = 0
