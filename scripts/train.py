@@ -2,12 +2,17 @@ import numpy as np
 import math
 import rospy
 import parser
+import json
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
 
+#One state object is declared in train.py
+#This is passed by reference to all listeners and the tf environment
+#Includes all RL state information and auxiliary info
+#Updated by listeners
 class State:
     def __init__(self):
         #initialize state with empty variables
@@ -19,6 +24,8 @@ class State:
         self.angular_vel = 0.0
         self.crash_det = False
         self.lap_finish = False
+        self.lap_time = 0.0
+        self.configs = 0.0
         self.col_counter = 0
         self.v_counter = 0
 
@@ -33,6 +40,7 @@ def col_detect(state):
     found = False
     #this loop iterates over each point in the LaserScan and finds the distance
     #if the distance is smaller than the threshold it updates the found variable
+    #TODO: can be streamlined with Numpy. Ok for now.
     for point in state.cur_points:
         x = point[0]
         y = point[1]
@@ -53,8 +61,7 @@ def col_detect(state):
         state.v_counter = 0
 
     #This variable determines how many crash values must be found before a crash is declared
-    mem_len = 5
-    state.crash_det = ((state.col_counter > mem_len) or (state.v_counter > mem_len))
+    state.crash_det = ((state.col_counter > state.configs['crash_thr']) or (state.v_counter > state.configs['crash_thr']))
 
     return state.crash_det
 
@@ -73,6 +80,10 @@ def train():
     drive_announce = rospy.Publisher(CONTROL_TOPIC, AckermannDriveStamped, queue_size=1)
     reset_announce = rospy.Publisher(RESET_TOPIC, Bool, queue_size=1)
     #Publish True to reset_announce to reset the simulator
+    #Load config
+    config_file = open(CONFIG_FILE)
+    main_state.configs = json.load(config_file)
+    config_file.close()
 
 #"Main function" here
 #Handle flags from command line
