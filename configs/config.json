@@ -10,4 +10,5 @@
     // range of turning angles, negative is turning left. In degrees
     "ANGL": -30.0,
     "ANGR": 30.0
+    "crash_thr": 5
 }

@@ -9,6 +9,10 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
 
+#One state object is declared in train.py
+#This is passed by reference to all listeners and the tf environment
+#Includes all RL state information and auxiliary info
+#Updated by listeners
 class State:
     def __init__(self):
         #initialize state with empty variables
@@ -22,6 +26,8 @@ class State:
         self.lap_finish = False
         self.lap_time = 0.0
         self.configs = 0.0
+        self.col_counter = 0
+        self.v_counter = 0
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -29,17 +35,35 @@ class State:
 def col_detect(state):
     dist_threshold = 0.2    #this is the threshold to determine if an object is
                             #so close as to hit the agent
+    v_threshold = 0.01      #this is the threshold to determine if the agent is
+                            #"stopped" or not
+    found = False
     #this loop iterates over each point in the LaserScan and finds the distance
-    #if the distance is smaller than the threshold it announces a crash
+    #if the distance is smaller than the threshold it updates the found variable
+    #TODO: can be streamlined with Numpy. Ok for now.
     for point in state.cur_points:
         x = point[0]
         y = point[1]
         dist = math.sqrt(x**2 + y**2)
         if dist < dist_threshold :
-            state.crash_det = True
-            return True
+            found = True
     #if none of the points are too close, no crash detected
-    return False
+    if found:
+        state.col_counter += 1
+    else:
+        #if no crash detected, reset the counter
+        state.col_counter = 0
+
+    #if the agent is "stopped" increment counter, else reset it
+    if state.velocity < v_threshold:
+        state.v_counter += 1
+    else:
+        state.v_counter = 0
+
+    #This variable determines how many crash values must be found before a crash is declared
+    state.crash_det = ((state.col_counter > state.configs['crash_thr']) or (state.v_counter > state.configs['crash_thr']))
+
+    return state.crash_det
 
 
 

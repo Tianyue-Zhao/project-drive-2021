@@ -7,6 +7,7 @@ def laser_parser(scan_data, state):
     #Assembles all points detected by LiDAR in an array
     #Each point described by x,y coordinates
     #These coordinates are from the perspective of the car
+    #These two callbacks are called by ROS to update the state
     laser_points = []
     ranges = scan_data.ranges
     angle_min = scan_data.angle_min

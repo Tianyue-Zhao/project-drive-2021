@@ -2,12 +2,11 @@ import parser, train
 
 import random
 import rospy
+import numpy as np
 import time
 from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
-
-import numpy as np
 
 # TODO: consider moving these parameters to train.py
 # time delay to get next step. In seconds
@@ -18,7 +17,6 @@ CONTROL_TOPIC = "/drive"
 ODOM_TOPIC = "/odom"
 # dummy frame ID
 DRIVE_FRAME = "drive"
-
 
 class PD_Environment:
     # The custom Tensorforce environment used for training
@@ -125,11 +123,13 @@ class PD_Environment:
 
     #A terminal state reached if the car has crashed
     #or a lap had been finished
+    # A terminal state reached if the car has crashed
+    # or a lap had been finished
     def terminal(self):
         return self.main_state.crash_det or self.main_state.lap_finish
 
-    #This should override whatever default close function there is
-    #Publish a message for the simulator to reset, and wait
+    # This should override whatever default close function these is
+    # Publish a message for the simulator to reset, and wait
     def close(self):
         message = Bool()
         message.data = True
@@ -142,3 +142,14 @@ class PD_Environment:
         message.data = True
         self.RS.publish(message)
         time.sleep(self.main_state.configs["RS_wait"])
+
+    def reward(self):
+        lap_finished = self.main_state.lap_finish
+        lap_time = self.main_state.lap_time
+
+        if lap_finished:
+            reward = np.exp(-lap_time)
+        else:
+            reward = -1
+
+        return reward
