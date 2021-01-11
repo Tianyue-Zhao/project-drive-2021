@@ -3,6 +3,7 @@ import math
 import rospy
 import parser
 import json
+import argparse
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
@@ -85,9 +86,30 @@ def train():
     main_state.configs = json.load(config_file)
     config_file.close()
 
-#"Main function" here
-#Handle flags from command line
-#Call "train()" with --train flag
-#Call "run()" with --run flag
-#Prepare for later additions such as "--steps=1000" and so on
-#Process these flags and save the inputs to variables
+if __name__ == "__main__":
+    #Handle flags from command line
+    parser = argparse.ArgumentParser()
+
+    #Set flags
+    #Prepare for later additions such as "--steps=1000" and so on
+    parser.add_argument("--train", type=bool, help="Begin training model", action="store_true")
+    parser.add_argument("--run", type=bool, help="Run program", action="store_true")
+    parser.add_argument("--steps", type=int, help="Add number of steps to train model", action="store_true")
+    parser.add_argument("--save", type=str, help="Add save file path", action="store_true")
+    parser.add_argument("--load", type=str, help="Add load file path", action="store_true")
+
+    #Process these flags
+    args = parser.parse_args()
+
+    #Save to variables
+    if args.steps:
+        steps = args.steps
+    if args.save:
+        save_file = args.save
+    if args.load:
+        load_file = args.load
+
+    #Train model
+    if args.train:
+        train()
+    
