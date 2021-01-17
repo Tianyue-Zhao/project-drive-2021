@@ -9,6 +9,7 @@
     "NUM_TURN_ANG": 10,
     // range of turning angles, negative is turning left. In degrees
     "ANGL": -30.0,
-    "ANGR": 30.0
+    "ANGR": 30.0,
+    "RW_MLT": 100.0,
     "crash_thr": 5
 }

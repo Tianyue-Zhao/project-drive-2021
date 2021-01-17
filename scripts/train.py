@@ -18,11 +18,15 @@ class State:
     def __init__(self):
         #initialize state with empty variables
         self.cur_points = np.zeros((2,1))
+        #x, y, theta, velocity, angular_vel
+        #are odometry variables
+        #x, y is car's position on the map
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
         self.velocity = 0.0
         self.angular_vel = 0.0
+        #True for crash
         self.crash_det = False
         self.lap_finish = False
         self.lap_time = 0.0

@@ -65,15 +65,6 @@ class PD_Environment:
     def terminal(self):
         return self.main_state.crash_det or self.main_state.lap_finish
 
-    def reward(self):
-        """Dummy reward function.
-
-        :return: 0 reward
-        :rtype: double
-        """
-        # TODO: impliment the reward function
-        return 0.0
-
     def get_next_state(self, actions):
         """ Helper function for execute. publishes velocity and turning angle 
         to the f1tenth gym environment, and then uses the condition of the car a 
@@ -143,13 +134,15 @@ class PD_Environment:
         self.RS.publish(message)
         time.sleep(self.main_state.configs["RS_wait"])
 
+    #Basic reward function
+    #Small punishment for crashing
     def reward(self):
         lap_finished = self.main_state.lap_finish
         lap_time = self.main_state.lap_time
 
         if lap_finished:
-            reward = np.exp(-lap_time)
-        else:
+            reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])
+        else if(self.main_state.crash_det):
             reward = -1
 
         return reward
