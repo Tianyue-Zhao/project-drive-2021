@@ -9,6 +9,9 @@ from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
+from tensorforce.environments import Environment
+from tensorforce.agents import Agent
+
 
 #One state object is declared in train.py
 #This is passed by reference to all listeners and the tf environment
@@ -70,7 +73,14 @@ def col_detect(state):
 
     return state.crash_det
 
+# Initialize environment
+# TODO: Define max_episode_timesteps from CONFIG file
+environment = Environment.create(
+    environment=PD_Environment, max_episode_timesteps=100
+)
 
+# Initialize Agent
+agent = Agent.create(agent='configs/agent.config.son', environment=environment)
 
 #Parameters such as save path, steps to train
 #and load from path to be added later
