@@ -82,6 +82,28 @@ environment = Environment.create(
 # Initialize Agent
 agent = Agent.create(agent='configs/agent.config.son', environment=environment)
 
+#Train for n episodes
+def run(environment, agent, num_episodes, max_step_per_epi, test=False):
+    #Run through each episode
+    for i in range(num_episodes):
+        num_steps = 0
+        states = environment.reset()
+        internals = agent.initial_internals()
+        done = False
+        
+        #Run through the episode
+        while not done and num_steps < max_step_per_epi:
+            num_steps +=1
+            actions = agent.act(states=states)
+            states, done, reward = environment.execute(actions=actions)
+            #Only update model if not testing
+            if not test:
+                agent.observe(terminal=done, reward=reward)
+
+        print("Episode {} done after {}".format(i,num_steps))
+
+        
+
 #Parameters such as save path, steps to train
 #and load from path to be added later
 #Primary train function
