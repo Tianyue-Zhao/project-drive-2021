@@ -1,5 +1,8 @@
 {
-    "RS_wait": 1,
+    // Time to wait for simulator to reset
+    "RS_WAIT": 1,
+    // The number of crashed frames neeeded to trigger reset
+    "CRASH_THR": 5,
     // number of choices for velocity of car
     "NUM_VEL_CHOICES": 10,
     // range of velocity of car, in m/s
@@ -10,9 +13,8 @@
     // range of turning angles, negative is turning left. In degrees
     "ANGL": -30.0,
     "ANGR": 30.0,
-<<<<<<< Updated upstream
     "RW_MLT": 100.0,
-=======
->>>>>>> Stashed changes
-    "crash_thr": 5
+    // Training configs
+    "NUM_RUNS_TOT": 1000,
+    "SAVE_RUNS": 100
 }

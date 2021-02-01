@@ -125,14 +125,14 @@ class PD_Environment:
         message = Bool()
         message.data = True
         self.RS.publish(message)
-        time.sleep(self.main_state.configs["RS_wait"])
+        time.sleep(self.main_state.configs["RS_WAIT"])
         super().close()
 
     def reset(self):
         message = Bool()
         message.data = True
         self.RS.publish(message)
-        time.sleep(self.main_state.configs["RS_wait"])
+        time.sleep(self.main_state.configs["RS_WAIT"])
 
     #Basic reward function
     #Small punishment for crashing
