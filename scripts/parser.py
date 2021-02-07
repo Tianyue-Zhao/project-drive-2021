@@ -31,3 +31,8 @@ def odom_parser(data, state):
     state.theta = euler_from_quaternion(quaternion)[2]
     state.velocity = data.twist.twist.linear.x
     state.angular_vel = data.twist.twist.angular.z
+
+def info_parser(data, state):
+    if(data.ego_lap_count>state.prev_lap):
+        state.lap_time = data.ego_elapsed_time
+        state.lap_finish = True

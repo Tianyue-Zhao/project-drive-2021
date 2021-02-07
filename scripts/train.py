@@ -11,6 +11,7 @@ from std_msgs.msg import Bool
 from tf_environment import PD_Environment
 from tensorforce.environments import Environment
 from tensorforce.agents import Agent
+from f1tenth_gym_ros.msg import RaceInfo
 
 
 #One state object is declared in train.py
@@ -36,6 +37,8 @@ class State:
         self.configs = 0.0
         self.col_counter = 0
         self.v_counter = 0
+        #The lap count when last checked
+        self.prev_lap = 0
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -85,6 +88,7 @@ def train():
     main_state = State()
     laser_listen = rospy.Subscriber(LASER_TOPIC, LaserScan, parser.laser_parser, main_state, queue_size=1)
     odom_listen = rospy.Subscriber(ODOM_TOPIC, Odometry, parser.odom_parser, main_state, queue_size=1)
+    info_listen = rospy.Subscriber(INFO_TOPIC, RaceInfo, parser.info_parser, main_state, queue_size=1)
     drive_announce = rospy.Publisher(CONTROL_TOPIC, AckermannDriveStamped, queue_size=1)
     reset_announce = rospy.Publisher(RESET_TOPIC, Bool, queue_size=1)
     #Publish True to reset_announce to reset the simulator
@@ -92,6 +96,17 @@ def train():
     config_file = open(CONFIG_FILE)
     main_state.configs = json.load(config_file)
     config_file.close()
+
+    #Accept flag params
+    if(args.steps):
+        train_steps = args.steps
+    else:
+        train_steps = main_state.configs["NUM_RUNS_TOT"]
+    if(args.save):
+        save_file = args.save
+    else:
+        save_file = main_state.configs["MODEL_DIR"]
+    #TODO: implement load functionality
 
     # Initialize environment
     # TODO: Define max_episode_timesteps from CONFIG file
@@ -101,6 +116,11 @@ def train():
 
     # Initialize Agent
     agent = Agent.create(agent='configs/agent.config.son', environment=environment)
+
+    # Run the save loop
+    for i in range((train_steps/main_state.configs["SAVE_RUNS"])+1):
+        run(environment, agent, main_state.configs["SAVE_RUNS"], 1000, False)
+        agent.save(save_file, format="hdf5", append="episodes")
 
 #Train for n episodes
 def run(environment, agent, num_episodes, max_step_per_epi, test=False):
@@ -147,5 +167,5 @@ if __name__ == "__main__":
 
     #Train model
     if args.train:
-        train()
+        train(args)
     

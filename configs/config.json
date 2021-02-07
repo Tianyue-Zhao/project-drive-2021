@@ -16,5 +16,6 @@
     "RW_MLT": 100.0,
     // Training configs
     "NUM_RUNS_TOT": 1000,
-    "SAVE_RUNS": 100
+    "SAVE_RUNS": 100,
+    "MODEL_DIR": "../models/"
 }
