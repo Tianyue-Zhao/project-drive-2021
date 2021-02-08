@@ -1,4 +1,5 @@
 from sensor_msgs.msg import LaserScan
+from tf.transformations import euler_from_quaternion
 import numpy as np
 import math
 

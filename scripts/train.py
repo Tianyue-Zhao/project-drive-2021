@@ -113,9 +113,10 @@ def train(flags):
 
     # Initialize environment
     # TODO: Define max_episode_timesteps from CONFIG file
-    environment = Environment.create(
-        environment=PD_Environment, max_episode_timesteps=100
-    )
+    #environment = Environment.create(
+    #    environment=PD_Environment, max_episode_timesteps=100
+    #)
+    environment = PD_Environment(reset_announce, drive_announce, main_state)
 
     # Initialize Agent
     agent = Agent.create(agent='configs/agent_config.json', environment=environment)

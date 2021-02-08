@@ -6,6 +6,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 from f1tenth_gym_ros.msg import RaceInfo
+from tensorforce import Environment
 
 # TODO: consider moving these parameters to train.py
 # time delay to get next step. In seconds
@@ -17,7 +18,7 @@ ODOM_TOPIC = "/odom"
 # dummy frame ID
 DRIVE_FRAME = "drive"
 
-class PD_Environment:
+class PD_Environment(Environment):
     # The custom Tensorforce environment used for training
 
     # RS_pub is the publisher to the reset channel
@@ -33,14 +34,13 @@ class PD_Environment:
         # Actions to be taken by agent, containing two categories of actions:
         # velocity and turning angles.
         # TODO: consider other formats for actions
-        self.agent_actions = self.init_actions()
+        self.agent_actions = self.actions()
         # publisher for velocity and turning angles
         self.ack_pub = rospy.Publisher(
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
         )
-        self.cfg = self.main_states.configs
 
-    def init_actions(self):
+    def actions(self):
         """ Helper function that creates a dictionary of actions for the agent 
         to choose from.
 
@@ -50,13 +50,14 @@ class PD_Environment:
         agent_actions = {"velocity": [], "turning_angle": []}
         # velocity and turn_ang are currently lists for convenience.
         agent_actions["velocity"] = np.arange(
-            self.cfg['VLOW'], self.cfg['VHIGH'], (self.cfg['VHIGH'] - self.cfg['VLOW']) / self.cfg['NUM_VEL_CHOICES'] 
+            self.main_state.configs['VLOW'], self.main_state.configs['VHIGH'], (self.main_state.configs['VHIGH'] - self.main_state.configs['VLOW']) / self.main_state.configs['NUM_VEL_CHOICES'] 
         ).tolist()
         agent_actions["turning_angle"] = np.arange(
-            self.cfg['ANGL'],
-            self.cfg['ANGR'],
-            (self.cfg['ANGR'] - self.cfg['ANGL']) / self.cfg['NUM_TURN_ANG'],
+            self.main_state.configs['ANGL'],
+            self.main_state.configs['ANGR'],
+            (self.main_state.configs['ANGR'] - self.main_state.configs['ANGL']) / self.main_state.configs['NUM_TURN_ANG'],
         ).tolist()
+        print(agent_actions)
         return agent_actions
 
     # A terminal state reached if the car has crashed
