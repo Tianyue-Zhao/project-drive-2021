@@ -81,29 +81,32 @@ def col_detect(state):
 #Parameters such as save path, steps to train
 #and load from path to be added later
 #Primary train function
-def train():
+def train(flags):
     #Initialize node
     rospy.init_node("rl_algorithm", anonymous=True)
     #Initialize subscribers for laser and odom
     main_state = State()
-    laser_listen = rospy.Subscriber(LASER_TOPIC, LaserScan, parser.laser_parser, main_state, queue_size=1)
-    odom_listen = rospy.Subscriber(ODOM_TOPIC, Odometry, parser.odom_parser, main_state, queue_size=1)
-    info_listen = rospy.Subscriber(INFO_TOPIC, RaceInfo, parser.info_parser, main_state, queue_size=1)
-    drive_announce = rospy.Publisher(CONTROL_TOPIC, AckermannDriveStamped, queue_size=1)
-    reset_announce = rospy.Publisher(RESET_TOPIC, Bool, queue_size=1)
-    #Publish True to reset_announce to reset the simulator
+    #TODO: Put config file into flags
+
     #Load config
-    config_file = open(CONFIG_FILE)
+    config_file = open('configs/config.json')
     main_state.configs = json.load(config_file)
     config_file.close()
+    #Subscribers and Publishers
+    laser_listen = rospy.Subscriber(main_state.configs['LASER_TOPIC'], LaserScan, parser.laser_parser, main_state, queue_size=1)
+    odom_listen = rospy.Subscriber(main_state.configs['ODOM_TOPIC'], Odometry, parser.odom_parser, main_state, queue_size=1)
+    info_listen = rospy.Subscriber(main_state.configs['INFO_TOPIC'], RaceInfo, parser.info_parser, main_state, queue_size=1)
+    drive_announce = rospy.Publisher(main_state.configs['CONTROL_TOPIC'], AckermannDriveStamped, queue_size=1)
+    reset_announce = rospy.Publisher(main_state.configs['RESET_TOPIC'], Bool, queue_size=1)
+    #Publish True to reset_announce to reset the simulator
 
     #Accept flag params
-    if(args.steps):
-        train_steps = args.steps
+    if(flags.steps):
+        train_steps = flags.steps
     else:
         train_steps = main_state.configs["NUM_RUNS_TOT"]
-    if(args.save):
-        save_file = args.save
+    if(flags.save):
+        save_file = flags.save
     else:
         save_file = main_state.configs["MODEL_DIR"]
     #TODO: implement load functionality
@@ -115,7 +118,7 @@ def train():
     )
 
     # Initialize Agent
-    agent = Agent.create(agent='configs/agent.config.son', environment=environment)
+    agent = Agent.create(agent='configs/agent_config.json', environment=environment)
 
     # Run the save loop
     for i in range((train_steps/main_state.configs["SAVE_RUNS"])+1):
@@ -144,28 +147,20 @@ def run(environment, agent, num_episodes, max_step_per_epi, test=False):
 
 if __name__ == "__main__":
     #Handle flags from command line
-    parser = argparse.ArgumentParser()
+    arg_parser = argparse.ArgumentParser()
 
     #Set flags
     #Prepare for later additions such as "--steps=1000" and so on
-    parser.add_argument("--train", type=bool, help="Begin training model", action="store_true")
-    parser.add_argument("--run", type=bool, help="Run program", action="store_true")
-    parser.add_argument("--steps", type=int, help="Add number of steps to train model", action="store_true")
-    parser.add_argument("--save", type=str, help="Add save file path", action="store_true")
-    parser.add_argument("--load", type=str, help="Add load file path", action="store_true")
+    arg_parser.add_argument("--train", help="Begin training model", action="store_true")
+    arg_parser.add_argument("--run", help="Run program", action="store_true")
+    arg_parser.add_argument("--steps", type=int, help="Add number of steps to train model")
+    arg_parser.add_argument("--save", type=str, help="Add save file path")
+    arg_parser.add_argument("--load", type=str, help="Add load file path")
 
     #Process these flags
-    args = parser.parse_args()
-
-    #Save to variables
-    if args.steps:
-        steps = args.steps
-    if args.save:
-        save_file = args.save
-    if args.load:
-        load_file = args.load
+    flags = arg_parser.parse_args()
 
     #Train model
-    if args.train:
-        train(args)
+    if flags.train:
+        train(flags)
     

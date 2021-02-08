@@ -1,5 +1,3 @@
-import parser, train
-
 import random
 import rospy
 import numpy as np
@@ -7,6 +5,7 @@ import time
 from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
+from f1tenth_gym_ros.msg import RaceInfo
 
 # TODO: consider moving these parameters to train.py
 # time delay to get next step. In seconds
@@ -53,7 +52,7 @@ class PD_Environment:
         agent_actions["velocity"] = np.arange(
             self.cfg['VLOW'], self.cfg['VHIGH'], (self.cfg['VHIGH'] - self.cfg['VLOW']) / self.cfg['NUM_VEL_CHOICES'] 
         ).tolist()
-        agent_actions["turnig_angle"] = np.arange(
+        agent_actions["turning_angle"] = np.arange(
             self.cfg['ANGL'],
             self.cfg['ANGR'],
             (self.cfg['ANGR'] - self.cfg['ANGL']) / self.cfg['NUM_TURN_ANG'],
@@ -142,7 +141,9 @@ class PD_Environment:
 
         if lap_finished:
             reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])
-        else if(self.main_state.crash_det):
+        elif(self.main_state.crash_det):
             reward = -1
+        else:
+            reward = 0.01
 
         return reward

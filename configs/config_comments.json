@@ -1,16 +1,24 @@
 {
+    // Time to wait for simulator to reset
     "RS_WAIT": 1,
+    // The number of crashed frames neeeded to trigger reset
     "CRASH_THR": 5,
+    // number of choices for velocity of car
     "NUM_VEL_CHOICES": 10,
+    // range of velocity of car, in m/s
     "VLOW": 2.0,
     "VHIGH": 10.0,
+    // number of choices for number of turning angle options
     "NUM_TURN_ANG": 10,
+    // range of turning angles, negative is turning left. In degrees
     "ANGL": -30.0,
     "ANGR": 30.0,
     "RW_MLT": 100.0,
+    // Training configs
     "NUM_RUNS_TOT": 1000,
     "SAVE_RUNS": 100,
     "MODEL_DIR": "../models/",
+    // Topics
     "LASER_TOPIC": "/scan",
     "ODOM_TOPIC": "/odom",
     "INFO_TOPIC": "/race_info",
