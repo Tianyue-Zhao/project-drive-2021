@@ -122,16 +122,28 @@ def train(flags):
     agent = Agent.create(agent='configs/agent_config.json', environment=environment)
 
     # Run the save loop
-    for i in range((train_steps/main_state.configs["SAVE_RUNS"])+1):
-        run(environment, agent, main_state.configs["SAVE_RUNS"], 1000, False)
+    for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
+        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 1000, False)
         agent.save(save_file, format="hdf5", append="episodes")
 
+def assemble_state(main_state):
+    cur_state = np.asarray([
+        main_state.x,
+        main_state.y,
+        main_state.theta,
+        main_state.velocity,
+        main_state.angular_vel
+    ])
+    return cur_state
+
 #Train for n episodes
-def run(environment, agent, num_episodes, max_step_per_epi, test=False):
+def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):
     #Run through each episode
     for i in range(num_episodes):
         num_steps = 0
-        states = environment.reset()
+        environment.reset()
+        states = assemble_state(main_state)
+        print(states)
         internals = agent.initial_internals()
         done = False
         

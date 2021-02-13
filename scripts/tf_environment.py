@@ -34,13 +34,13 @@ class PD_Environment(Environment):
         # Actions to be taken by agent, containing two categories of actions:
         # velocity and turning angles.
         # TODO: consider other formats for actions
-        self.agent_actions = self.actions()
+        self.agent_actions = self.action_values()
         # publisher for velocity and turning angles
         self.ack_pub = rospy.Publisher(
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
         )
 
-    def actions(self):
+    def action_values(self):
         """ Helper function that creates a dictionary of actions for the agent 
         to choose from.
 
@@ -58,6 +58,12 @@ class PD_Environment(Environment):
             (self.main_state.configs['ANGR'] - self.main_state.configs['ANGL']) / self.main_state.configs['NUM_TURN_ANG'],
         ).tolist()
         print(agent_actions)
+        return agent_actions
+
+    def actions(self):
+        agent_actions = {"velocity":
+            {"type": "int", "num_values": self.main_state.configs["NUM_VEL_CHOICES"]},
+            "turning_angle": {"type": "int", "num_values": self.main_state.configs["NUM_TURN_ANG"]}}
         return agent_actions
 
     # A terminal state reached if the car has crashed
@@ -78,8 +84,10 @@ class PD_Environment(Environment):
         """
         # TODO: Need to test if 0.5 sec delay works
         # TODO: FIgure out better way to choose actions.
-        vel = actions["velocity"][random.randint(0, NUM_VEL_CHOICES - 1)]
-        steer_ang = actions["turning_angle"][random.randint(0, NUM_TURN_ANG - 1)]
+        #vel = actions["velocity"][random.randint(0, NUM_VEL_CHOICES - 1)]
+        #steer_ang = actions["turning_angle"][random.randint(0, NUM_TURN_ANG - 1)]
+        vel = self.agent_actions["velocity"][actions["velocity"]]
+        steer_ang = self.agent_actions["turning_angle"][actions["turning_angle"]]
         ack_msg = AckermannDriveStamped()
         ack_msg.header.stamp = rospy.Time.now()
         ack_msg.header.frame_id = DRIVE_FRAME
@@ -102,12 +110,20 @@ class PD_Environment(Environment):
         terminated, reward value
         :rtype: obj:State, bool or 2, float
         """
+        print(actions)
         self.get_next_state(actions)
+        cur_state = np.asarray([
+            self.main_state.x,
+            self.main_state.y,
+            self.main_state.theta,
+            self.main_state.velocity,
+            self.main_state.angular_vel
+        ])
         reward = self.reward()
         # currently using the given terminal method.
         # TODO:handle return option 2 (environment aborted)
         terminal = self.terminal()
-        return self.main_state, terminal, reward
+        return cur_state, terminal, reward
 
     def states(self):
         return {'type': 'float', 'shape': (5,)}
