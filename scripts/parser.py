@@ -19,6 +19,7 @@ def laser_parser(scan_data, state):
         y = ranges[i] * math.cos(angle_min + i * angle_increment)
         laser_points.append([x, y])
     state.cur_points = np.asarray(laser_points)
+    print(state.cur_points.shape)
 
 def odom_parser(data, state):
     #data is the odom message from ROS

@@ -44,9 +44,9 @@ class State:
 #returns true if it determines the car has crashed
 #this will be used to trigger a simulator reset
 def col_detect(state):
-    dist_threshold = 0.2    #this is the threshold to determine if an object is
+    dist_threshold = state.configs["DIST_THR"]    #this is the threshold to determine if an object is
                             #so close as to hit the agent
-    v_threshold = 0.01      #this is the threshold to determine if the agent is
+    v_threshold = state.configs["VEL_THR"]      #this is the threshold to determine if the agent is
                             #"stopped" or not
     found = False
     #this loop iterates over each point in the LaserScan and finds the distance
@@ -72,7 +72,7 @@ def col_detect(state):
         state.v_counter = 0
 
     #This variable determines how many crash values must be found before a crash is declared
-    state.crash_det = ((state.col_counter > state.configs['crash_thr']) or (state.v_counter > state.configs['CRASH_THR']))
+    state.crash_det = ((state.col_counter > state.configs['CRASH_THR']) or (state.v_counter > state.configs['CRASH_THR']))
 
     return state.crash_det
 
@@ -123,7 +123,7 @@ def train(flags):
 
     # Run the save loop
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
-        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 1000, False)
+        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 500, False)
         agent.save(save_file, format="hdf5", append="episodes")
 
 def assemble_state(main_state):
@@ -146,12 +146,18 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
         print(states)
         internals = agent.initial_internals()
         done = False
+        main_state.crash_det = False
         
         #Run through the episode
         while not done and num_steps < max_step_per_epi:
             num_steps +=1
             actions = agent.act(states=states)
             states, done, reward = environment.execute(actions=actions)
+            col_detect(main_state)
+            if(num_steps<10):
+                done = False
+            if(main_state.crash_det):
+                print("Crashed")
             #Only update model if not testing
             if not test:
                 agent.observe(terminal=done, reward=reward)

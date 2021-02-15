@@ -128,13 +128,6 @@ class PD_Environment(Environment):
     def states(self):
         return {'type': 'float', 'shape': (5,)}
 
-    #A terminal state reached if the car has crashed
-    #or a lap had been finished
-    # A terminal state reached if the car has crashed
-    # or a lap had been finished
-    def terminal(self):
-        return self.main_state.crash_det or self.main_state.lap_finish
-
     # This should override whatever default close function these is
     # Publish a message for the simulator to reset, and wait
     def close(self):
