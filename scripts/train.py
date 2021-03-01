@@ -21,7 +21,7 @@ from f1tenth_gym_ros.msg import RaceInfo
 class State:
     def __init__(self):
         #initialize state with empty variables
-        self.cur_points = np.zeros((2,1))
+        self.cur_points = np.zeros((1080,2))
         #x, y, theta, velocity, angular_vel
         #are odometry variables
         #x, y is car's position on the map
@@ -118,23 +118,17 @@ def train(flags):
     #)
     environment = PD_Environment(reset_announce, drive_announce, main_state)
 
-    # Initialize Agent
-    agent = Agent.create(agent='configs/agent_config.json', environment=environment)
+    if(flags.load):
+        agent = Agent.load(directory=flags.load,environment=environment)
+        print("Agent loaded from "+flags.load)
+    else:
+        # Initialize Agent
+        agent = Agent.create(agent='configs/agent_config.json', environment=environment)
 
     # Run the save loop
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
-        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 500, False)
+        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 1000, False)
         agent.save(save_file, format="hdf5", append="episodes")
-
-def assemble_state(main_state):
-    cur_state = np.asarray([
-        main_state.x,
-        main_state.y,
-        main_state.theta,
-        main_state.velocity,
-        main_state.angular_vel
-    ])
-    return cur_state
 
 #Train for n episodes
 def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):
@@ -142,11 +136,11 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
     for i in range(num_episodes):
         num_steps = 0
         environment.reset()
-        states = assemble_state(main_state)
-        print(states)
+        states = parser.assemble_state(main_state)
         internals = agent.initial_internals()
         done = False
         main_state.crash_det = False
+        main_state.lap_finish = False
         
         #Run through the episode
         while not done and num_steps < max_step_per_epi:
@@ -158,6 +152,9 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
                 done = False
             if(main_state.crash_det):
                 print("Crashed")
+            if(main_state.lap_finish):
+                print("Lap finished")
+                main_state.lap_finish = False
             #Only update model if not testing
             if not test:
                 agent.observe(terminal=done, reward=reward)

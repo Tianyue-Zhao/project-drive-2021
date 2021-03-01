@@ -2,6 +2,7 @@ import random
 import rospy
 import numpy as np
 import time
+import parser
 from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
@@ -10,7 +11,7 @@ from tensorforce import Environment
 
 # TODO: consider moving these parameters to train.py
 # time delay to get next step. In seconds
-NEXT_STATE_DELAY = 0.5
+NEXT_STATE_DELAY = 0.1
 # dummpy control topic
 CONTROL_TOPIC = "/drive"
 # dummy odom topic
@@ -110,15 +111,10 @@ class PD_Environment(Environment):
         terminated, reward value
         :rtype: obj:State, bool or 2, float
         """
-        print(actions)
+        #print(actions)
         self.get_next_state(actions)
-        cur_state = np.asarray([
-            self.main_state.x,
-            self.main_state.y,
-            self.main_state.theta,
-            self.main_state.velocity,
-            self.main_state.angular_vel
-        ])
+        cur_state = parser.assemble_state(self.main_state)
+
         reward = self.reward()
         # currently using the given terminal method.
         # TODO:handle return option 2 (environment aborted)
@@ -126,7 +122,7 @@ class PD_Environment(Environment):
         return cur_state, terminal, reward
 
     def states(self):
-        return {'type': 'float', 'shape': (5,)}
+        return {'type': 'float', 'shape': (2165,)}
 
     # This should override whatever default close function these is
     # Publish a message for the simulator to reset, and wait

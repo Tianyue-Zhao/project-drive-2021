@@ -19,7 +19,6 @@ def laser_parser(scan_data, state):
         y = ranges[i] * math.cos(angle_min + i * angle_increment)
         laser_points.append([x, y])
     state.cur_points = np.asarray(laser_points)
-    print(state.cur_points.shape)
 
 def odom_parser(data, state):
     #data is the odom message from ROS
@@ -38,3 +37,14 @@ def info_parser(data, state):
     if(data.ego_lap_count>state.prev_lap):
         state.lap_time = data.ego_elapsed_time
         state.lap_finish = True
+
+def assemble_state(main_state):
+    cur_state = np.asarray([
+        main_state.x,
+        main_state.y,
+        main_state.theta,
+        main_state.velocity,
+        main_state.angular_vel
+    ])
+    cur_state = np.concatenate((cur_state, np.reshape(main_state.cur_points, 2160)))
+    return cur_state
