@@ -39,6 +39,11 @@ class State:
         self.v_counter = 0
         #The lap count when last checked
         self.prev_lap = 0
+        #Lap counting with waypoints
+        self.prev_waypoint = 0
+        self.cur_waypoint = 0
+        self.num_waypoints = 0
+        self.turn_back = False
 
 #collision detection function
 #returns true if it determines the car has crashed

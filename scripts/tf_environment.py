@@ -41,6 +41,20 @@ class PD_Environment(Environment):
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
         )
 
+        #prepare waypoints for accurate lap-counting
+        #the simulator's included lap-counting has exploits
+        #and is therefore not good enough
+        self.waypoints = main_state.configs["waypoints"]
+        self.waypoints = np.asarray(self.waypoints)
+        self.waypoits = self.waypoints.astype("float64")
+        self.num_waypoints = self.waypoints.shape[0]
+        self.main_state.num_waypoints = self.num_waypoints
+        self.resolution = main_state.configs["map_resolution"]
+        self.map_orig = np.asarray(main_state.configs["map_orig"])
+        for i in range(self.num_waypoints):
+            self.waypoints[i, :] *= self.resolution
+            self.waypoints[i, :] += self.map_orig
+
     def action_values(self):
         """ Helper function that creates a dictionary of actions for the agent 
         to choose from.
@@ -70,7 +84,9 @@ class PD_Environment(Environment):
     # A terminal state reached if the car has crashed
     # or a lap had been finished
     def terminal(self):
-        return self.main_state.crash_det or self.main_state.lap_finish
+        return self.main_state.crash_det
+            or self.main_state.lap_finish
+            or self.main_state.turn_back
 
     def get_next_state(self, actions):
         """ Helper function for execute. publishes velocity and turning angle 
@@ -115,6 +131,30 @@ class PD_Environment(Environment):
         self.get_next_state(actions)
         cur_state = parser.assemble_state(self.main_state)
 
+        #Decide which waypoint the car is currently at
+        location = np.asarray((self.main_state.x, self.main_state.y))
+        distances = self.waypoints - location
+        distances = np.sum(np.square(distances), axis=1)
+        distances = np.sqrt(distances)
+        lt = np.less(distances,self.main_state.configs["waypoint_dist"])
+        cur_wp = 0
+        for i in range(self.num_waypoints):
+            if(lt[i]):
+                cur_wp = i
+        self.prev_waypoint = self.cur_waypoint
+        self.cur_waypoint = cur_wp
+
+        #Check if the car had turned back
+        if((self.main_state.cur_waypoint!=0)
+            and(self.main_state.cur_waypoint
+            <self.main_state.prev_waypoint)):
+            self.main_state.turn_back = True
+        #Check if the car had finished a lap
+        if((self.main_state.cur_waypoint==0)
+            and(self.main_state.prev_waypoint
+            =self.main_state.num_waypoints-1)):
+            self.main_state.lap_finish = True
+
         reward = self.reward()
         # currently using the given terminal method.
         # TODO:handle return option 2 (environment aborted)
@@ -144,6 +184,9 @@ class PD_Environment(Environment):
     def reward(self):
         lap_finished = self.main_state.lap_finish
         lap_time = self.main_state.lap_time
+
+        if(self.main_state.turn_back):
+            return -10
 
         if lap_finished:
             reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])

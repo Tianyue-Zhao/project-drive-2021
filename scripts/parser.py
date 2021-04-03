@@ -34,9 +34,7 @@ def odom_parser(data, state):
     state.angular_vel = data.twist.twist.angular.z
 
 def info_parser(data, state):
-    if(data.ego_lap_count>state.prev_lap):
-        state.lap_time = data.ego_elapsed_time
-        state.lap_finish = True
+    state.lap_time = data.ego_elapsed_time
 
 def assemble_state(main_state):
     cur_state = np.asarray([
