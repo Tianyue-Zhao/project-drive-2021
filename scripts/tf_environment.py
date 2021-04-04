@@ -46,7 +46,7 @@ class PD_Environment(Environment):
         #and is therefore not good enough
         self.waypoints = main_state.configs["waypoints"]
         self.waypoints = np.asarray(self.waypoints)
-        self.waypoits = self.waypoints.astype("float64")
+        self.waypoints = self.waypoints.astype("float64")
         self.num_waypoints = self.waypoints.shape[0]
         self.main_state.num_waypoints = self.num_waypoints
         self.resolution = main_state.configs["map_resolution"]
@@ -84,8 +84,8 @@ class PD_Environment(Environment):
     # A terminal state reached if the car has crashed
     # or a lap had been finished
     def terminal(self):
-        return self.main_state.crash_det
-            or self.main_state.lap_finish
+        return self.main_state.crash_det\
+            or self.main_state.lap_finish\
             or self.main_state.turn_back
 
     def get_next_state(self, actions):
@@ -141,8 +141,8 @@ class PD_Environment(Environment):
         for i in range(self.num_waypoints):
             if(lt[i]):
                 cur_wp = i
-        self.prev_waypoint = self.cur_waypoint
-        self.cur_waypoint = cur_wp
+        self.main_state.prev_waypoint = self.main_state.cur_waypoint
+        self.main_state.cur_waypoint = cur_wp
 
         #Check if the car had turned back
         if((self.main_state.cur_waypoint!=0)
@@ -150,9 +150,9 @@ class PD_Environment(Environment):
             <self.main_state.prev_waypoint)):
             self.main_state.turn_back = True
         #Check if the car had finished a lap
-        if((self.main_state.cur_waypoint==0)
-            and(self.main_state.prev_waypoint
-            =self.main_state.num_waypoints-1)):
+        if((self.main_state.cur_waypoint==0)\
+            and(self.main_state.prev_waypoint\
+            ==self.main_state.num_waypoints-1)):
             self.main_state.lap_finish = True
 
         reward = self.reward()
@@ -177,6 +177,7 @@ class PD_Environment(Environment):
         message = Bool()
         message.data = True
         self.RS.publish(message)
+        self.main_state.cur_waypoint = 0
         time.sleep(self.main_state.configs["RS_WAIT"])
 
     #Basic reward function
@@ -186,7 +187,12 @@ class PD_Environment(Environment):
         lap_time = self.main_state.lap_time
 
         if(self.main_state.turn_back):
+            print("Turned back, reset simulation")
             return -10
+
+        if(self.main_state.cur_waypoint>self.main_state.prev_waypoint):
+            reward = 10
+            print("Reward for reaching waypoint "+str(self.main_state.cur_waypoint)+"!")
 
         if lap_finished:
             reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])

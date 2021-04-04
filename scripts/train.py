@@ -132,7 +132,7 @@ def train(flags):
 
     # Run the save loop
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
-        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 1000, False)
+        run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 10000, False)
         agent.save(save_file, format="hdf5", append="episodes")
 
 #Train for n episodes
