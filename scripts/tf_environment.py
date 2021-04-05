@@ -11,7 +11,7 @@ from tensorforce import Environment
 
 # TODO: consider moving these parameters to train.py
 # time delay to get next step. In seconds
-NEXT_STATE_DELAY = 0.1
+NEXT_STATE_DELAY = 0.01
 # dummpy control topic
 CONTROL_TOPIC = "/drive"
 # dummy odom topic
@@ -105,17 +105,18 @@ class PD_Environment(Environment):
         #steer_ang = actions["turning_angle"][random.randint(0, NUM_TURN_ANG - 1)]
         vel = self.agent_actions["velocity"][actions["velocity"]]
         steer_ang = self.agent_actions["turning_angle"][actions["turning_angle"]]
-        ack_msg = AckermannDriveStamped()
-        ack_msg.header.stamp = rospy.Time.now()
-        ack_msg.header.frame_id = DRIVE_FRAME
-        ack_msg.drive.steering_angle = steer_ang
-        ack_msg.drive.speed = vel
-        self.ack_pub.publish(ack_msg)
-        # use ros rate to wait for 0.5 sec before reading the next odometry
-        # reading is automatically handled by odom_callback.
-        # TODO: test whether the ros rate solution works
-        # NOTE: rate.sleep still pauses the entire thread. May affect other funcs
-        self.rate.sleep()
+        for i in range(5):
+            ack_msg = AckermannDriveStamped()
+            ack_msg.header.stamp = rospy.Time.now()
+            ack_msg.header.frame_id = DRIVE_FRAME
+            ack_msg.drive.steering_angle = steer_ang
+            ack_msg.drive.speed = vel
+            self.ack_pub.publish(ack_msg)
+            # use ros rate to wait for 0.5 sec before reading the next odometry
+            # reading is automatically handled by odom_callback.
+            # TODO: test whether the ros rate solution works
+            # NOTE: rate.sleep still pauses the entire thread. May affect other funcs
+            self.rate.sleep()
 
     def execute(self, actions):
         """Overriden execute function that takes in an action and "advances the 
@@ -135,12 +136,7 @@ class PD_Environment(Environment):
         location = np.asarray((self.main_state.x, self.main_state.y))
         distances = self.waypoints - location
         distances = np.sum(np.square(distances), axis=1)
-        distances = np.sqrt(distances)
-        lt = np.less(distances,self.main_state.configs["waypoint_dist"])
-        cur_wp = 0
-        for i in range(self.num_waypoints):
-            if(lt[i]):
-                cur_wp = i
+        cur_wp = np.argmin(distances)
         self.main_state.prev_waypoint = self.main_state.cur_waypoint
         self.main_state.cur_waypoint = cur_wp
 
@@ -149,6 +145,11 @@ class PD_Environment(Environment):
             and(self.main_state.cur_waypoint
             <self.main_state.prev_waypoint)):
             self.main_state.turn_back = True
+        if((self.main_state.prev_waypoint==0)
+            and(self.main_state.cur_waypoint>2)):
+            self.main_state.turn_back = True
+            print(self.main_state.cur_waypoint)
+            print(self.main_state.prev_waypoint)
         #Check if the car had finished a lap
         if((self.main_state.cur_waypoint==0)\
             and(self.main_state.prev_waypoint\
@@ -177,8 +178,11 @@ class PD_Environment(Environment):
         message = Bool()
         message.data = True
         self.RS.publish(message)
-        self.main_state.cur_waypoint = 0
         time.sleep(self.main_state.configs["RS_WAIT"])
+        self.main_state.cur_waypoint = 0
+        self.main_state.prev_waypoint = 0
+        self.main_state.turn_back = False
+        self.main_state.lap_finish = False
 
     #Basic reward function
     #Small punishment for crashing
@@ -188,10 +192,10 @@ class PD_Environment(Environment):
 
         if(self.main_state.turn_back):
             print("Turned back, reset simulation")
-            return -10
+            return -50
 
         if(self.main_state.cur_waypoint>self.main_state.prev_waypoint):
-            reward = 10
+            reward = 100
             print("Reward for reaching waypoint "+str(self.main_state.cur_waypoint)+"!")
 
         if lap_finished:
