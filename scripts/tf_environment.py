@@ -64,14 +64,17 @@ class PD_Environment(Environment):
         """
         agent_actions = {"velocity": [], "turning_angle": []}
         # velocity and turn_ang are currently lists for convenience.
-        agent_actions["velocity"] = np.arange(
-            self.main_state.configs['VLOW'], self.main_state.configs['VHIGH'], (self.main_state.configs['VHIGH'] - self.main_state.configs['VLOW']) / self.main_state.configs['NUM_VEL_CHOICES'] 
-        ).tolist()
+        if(self.main_state.configs['NUM_VEL_CHOICES']==1):
+            agent_actions["velocity"] = [self.main_state.configs['VLOW']]
+        else:
+            vel_res = (self.main_state.configs['VHIGH']-self.main_state.configs['VLOW'])/self.main_state.configs['NUM_VEL_CHOICES']
+            agent_actions["velocity"] = np.arange(
+                self.main_state.configs['VLOW'], self.main_state.configs['VHIGH']+vel_res, vel_res).tolist()
+        ang_res = (self.main_state.configs['ANGR']-self.main_state.configs['ANGL'])/self.main_state.configs['NUM_TURN_ANG']
         agent_actions["turning_angle"] = np.arange(
             self.main_state.configs['ANGL'],
-            self.main_state.configs['ANGR'],
-            (self.main_state.configs['ANGR'] - self.main_state.configs['ANGL']) / self.main_state.configs['NUM_TURN_ANG'],
-        ).tolist()
+            self.main_state.configs['ANGR']+ang_res,
+            ang_res).tolist()
         print(agent_actions)
         return agent_actions
 
