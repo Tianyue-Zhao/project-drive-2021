@@ -182,6 +182,14 @@ class PD_Environment(Environment):
         message.data = True
         self.RS.publish(message)
         time.sleep(self.main_state.configs["RS_WAIT"])
+        #Publish a dummy message to try and refresh
+        ack_msg = AckermannDriveStamped()
+        ack_msg.header.stamp = rospy.Time.now()
+        ack_msg.header.frame_id = DRIVE_FRAME
+        ack_msg.drive.steering_angle = 0
+        ack_msg.drive.speed = 0
+        self.ack_pub.publish(ack_msg)
+        time.sleep(self.main_state.configs["RS_WAIT"])
         self.main_state.cur_waypoint = 0
         self.main_state.prev_waypoint = 0
         self.main_state.turn_back = False
