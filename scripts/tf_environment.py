@@ -142,6 +142,10 @@ class PD_Environment(Environment):
         cur_wp = np.argmin(distances)
         self.main_state.prev_waypoint = self.main_state.cur_waypoint
         self.main_state.cur_waypoint = cur_wp
+        #Decide the distance to the next waypoint
+        next_wp = (cur_wp+1)%self.main_state.num_waypoints
+        self.main_state.prev_distance = self.main_state.cur_distance
+        self.main_state.cur_distance = distances[next_wp]
 
         #Check if the car had turned back
         if((self.main_state.cur_waypoint!=0)
@@ -194,6 +198,8 @@ class PD_Environment(Environment):
         self.main_state.prev_waypoint = 0
         self.main_state.turn_back = False
         self.main_state.lap_finish = False
+        #Reset next waypoint distance tracking
+        self.cur_distance = 0.0
 
     #Basic reward function
     #Small punishment for crashing
@@ -208,12 +214,17 @@ class PD_Environment(Environment):
         if(self.main_state.cur_waypoint>self.main_state.prev_waypoint):
             reward = 100
             print("Reward for reaching waypoint "+str(self.main_state.cur_waypoint)+"!")
+        
+        if(self.main_state.cur_waypoint == self.main_state.prev_waypoint):
+            if(self.main_state.prev_distance!=0.0):
+                #print("Distance delta: "+str(self.main_state.prev_distance - self.main_state.cur_distance))
+                reward = (self.main_state.prev_distance - self.main_state.cur_distance) * 10
+            else:
+                reward = 0.01
 
         if lap_finished:
             reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])
         elif(self.main_state.crash_det):
             reward = -1
-        else:
-            reward = 0.01
 
         return reward

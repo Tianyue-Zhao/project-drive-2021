@@ -44,6 +44,9 @@ class State:
         self.cur_waypoint = 0
         self.num_waypoints = 0
         self.turn_back = False
+        #Apr 28 addition of continuous rewards
+        self.prev_distance = 0.0
+        self.cur_distance = 0.0
 
 #collision detection function
 #returns true if it determines the car has crashed
