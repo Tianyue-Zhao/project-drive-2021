@@ -147,9 +147,14 @@ class PD_Environment(Environment):
         self.main_state.prev_distance = self.main_state.cur_distance
         self.main_state.cur_distance = distances[next_wp]
 
+        #Check if the car had finished a lap
+        if((self.main_state.cur_waypoint==0)\
+            and(self.main_state.prev_waypoint\
+            ==self.main_state.num_waypoints-1)):
+            self.main_state.lap_finish = True
         #Check if the car had turned back
-        if((self.main_state.cur_waypoint!=0)
-            and(self.main_state.cur_waypoint
+        if((not self.main_state.lap_finish)
+            and (self.main_state.cur_waypoint
             <self.main_state.prev_waypoint)):
             self.main_state.turn_back = True
         if((self.main_state.prev_waypoint==0)
@@ -157,11 +162,6 @@ class PD_Environment(Environment):
             self.main_state.turn_back = True
             print(self.main_state.cur_waypoint)
             print(self.main_state.prev_waypoint)
-        #Check if the car had finished a lap
-        if((self.main_state.cur_waypoint==0)\
-            and(self.main_state.prev_waypoint\
-            ==self.main_state.num_waypoints-1)):
-            self.main_state.lap_finish = True
 
         reward = self.reward()
         # currently using the given terminal method.

@@ -8,9 +8,9 @@ waypoints = []
 vis_waypoints = []
 # origin of the car
 
-image = cv2.imread("../../f1tenth_gym_ros/maps/berlin.png")
+image = cv2.imread("../../f1tenth_gym_ros/maps/circle.png")
 print(image.shape)
-origin = (232, image.shape[1] - 530)
+origin = (300, image.shape[1] - 530)
 
 
 def click_and_crop(event, x, y, flags, param):
