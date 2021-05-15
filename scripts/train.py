@@ -125,6 +125,7 @@ def train(flags):
     #    environment=PD_Environment, max_episode_timesteps=100
     #)
     environment = PD_Environment(reset_announce, drive_announce, main_state)
+    environment.publish_markers()
 
     if(flags.load):
         agent = Agent.load(directory=flags.load,environment=environment)

@@ -10,7 +10,7 @@ vis_waypoints = []
 
 image = cv2.imread("../../f1tenth_gym_ros/maps/circle.png")
 print(image.shape)
-origin = (300, image.shape[1] - 530)
+origin = (304, image.shape[1] - 540)
 
 
 def click_and_crop(event, x, y, flags, param):

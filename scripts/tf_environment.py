@@ -4,6 +4,7 @@ import numpy as np
 import time
 import parser
 from ackermann_msgs.msg import AckermannDriveStamped
+from visualization_msgs.msg import Marker
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 from f1tenth_gym_ros.msg import RaceInfo
@@ -40,6 +41,7 @@ class PD_Environment(Environment):
         self.ack_pub = rospy.Publisher(
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
         )
+        self.marker_pub = rospy.Publisher(main_state.configs['MARKER_TOPIC'], Marker, queue_size=main_state.num_waypoints)
 
         #prepare waypoints for accurate lap-counting
         #the simulator's included lap-counting has exploits
@@ -51,6 +53,7 @@ class PD_Environment(Environment):
         self.main_state.num_waypoints = self.num_waypoints
         self.resolution = main_state.configs["map_resolution"]
         self.map_orig = np.asarray(main_state.configs["map_orig"])
+        #Map waypoints from pixels to world location
         for i in range(self.num_waypoints):
             self.waypoints[i, :] *= self.resolution
             self.waypoints[i, :] += self.map_orig
@@ -147,6 +150,10 @@ class PD_Environment(Environment):
         self.main_state.prev_distance = self.main_state.cur_distance
         self.main_state.cur_distance = distances[next_wp]
 
+        #Publish the waypoints again if the current waypoint had changed
+        if(not self.main_state.prev_waypoint==self.main_state.cur_waypoint):
+            self.publish_markers()
+
         #Check if the car had finished a lap
         if((self.main_state.cur_waypoint==0)\
             and(self.main_state.prev_waypoint\
@@ -200,6 +207,7 @@ class PD_Environment(Environment):
         self.main_state.lap_finish = False
         #Reset next waypoint distance tracking
         self.cur_distance = 0.0
+        self.publish_markers()
 
     #Basic reward function
     #Small punishment for crashing
@@ -228,3 +236,37 @@ class PD_Environment(Environment):
             reward = -1
 
         return reward
+
+    def publish_markers(self):
+        for i in range(self.main_state.num_waypoints):
+            marker_msg = Marker()
+            marker_msg.header.frame_id = "map"
+            marker_msg.header.stamp = rospy.Time.now()
+            marker_msg.ns = "waypoints"
+            marker_msg.id = i
+            marker_msg.type = 2
+            marker_msg.action = 0
+            marker_msg.pose.position.x = self.waypoints[i,0]
+            marker_msg.pose.position.y = self.waypoints[i,1]
+            marker_msg.pose.position.z = 0
+            marker_msg.pose.orientation.x = 0.0
+            marker_msg.pose.orientation.y = 0.0
+            marker_msg.pose.orientation.z = 0.0
+            marker_msg.pose.orientation.w = 1.0
+            marker_msg.scale.x = 0.2
+            marker_msg.scale.y = 0.2
+            marker_msg.scale.z = 0.2
+            marker_msg.color.a = 1.0
+            if(i==self.main_state.cur_waypoint):
+                marker_msg.color.r = 0
+                marker_msg.color.g = 1.0
+                marker_msg.color.b = 0
+            elif(i==(self.main_state.cur_waypoint+1)%self.main_state.num_waypoints):
+                marker_msg.color.r = 0
+                marker_msg.color.g = 0.9
+                marker_msg.color.b = 0.9
+            else:
+                marker_msg.color.r = 1.0
+                marker_msg.color.g = 0
+                marker_msg.color.b = 0
+            self.marker_pub.publish(marker_msg)
