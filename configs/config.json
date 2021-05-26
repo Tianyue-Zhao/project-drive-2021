@@ -11,7 +11,7 @@
     "ANGR": 30.0,
     "RW_MLT": 100.0,
     "NUM_RUNS_TOT": 20,
-    "SAVE_RUNS": 20,
+    "SAVE_RUNS": 1,
     "MODEL_DIR": "models/",
     "LASER_TOPIC": "/scan",
     "ODOM_TOPIC": "/odom",

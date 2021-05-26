@@ -12,7 +12,7 @@ from tensorforce import Environment
 
 # TODO: consider moving these parameters to train.py
 # time delay to get next step. In seconds
-NEXT_STATE_DELAY = 0.01
+NEXT_STATE_DELAY = 0.1
 # dummpy control topic
 CONTROL_TOPIC = "/drive"
 # dummy odom topic
@@ -29,6 +29,8 @@ class PD_Environment(Environment):
     def __init__(self, RS_pub, D_pub, main_state):
         self.RS = RS_pub
         self.D = D_pub
+        if(main_state.verbose):
+            NEXT_STATE_DELAY = 1.0
         # next state of the agent after taking an action
         self.main_state = main_state
         # ros rate that controls the frequency of reading messages.
@@ -174,6 +176,9 @@ class PD_Environment(Environment):
         # currently using the given terminal method.
         # TODO:handle return option 2 (environment aborted)
         terminal = self.terminal()
+        self.main_state.ep_reward += reward
+        if(self.main_state.verbose):
+            print("Episode accumulated reward: "+str(self.main_state.ep_reward))
         return cur_state, terminal, reward
 
     def states(self):
@@ -205,6 +210,7 @@ class PD_Environment(Environment):
         self.main_state.prev_waypoint = 0
         self.main_state.turn_back = False
         self.main_state.lap_finish = False
+        self.main_state.ep_reward = 0.0
         #Reset next waypoint distance tracking
         self.cur_distance = 0.0
         self.publish_markers()

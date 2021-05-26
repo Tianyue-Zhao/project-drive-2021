@@ -44,9 +44,12 @@ class State:
         self.cur_waypoint = 0
         self.num_waypoints = 0
         self.turn_back = False
+        self.ep_reward = 0.0
         #Apr 28 addition of continuous rewards
         self.prev_distance = 0.0
         self.cur_distance = 0.0
+        #Give configuration to tf_environment
+        self.verbose = False
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -117,6 +120,8 @@ def train(flags):
         save_file = flags.save
     else:
         save_file = main_state.configs["MODEL_DIR"]
+    if(flags.verbose):
+        main_state.verbose = True
     #TODO: implement load functionality
 
     # Initialize environment
@@ -133,6 +138,12 @@ def train(flags):
     else:
         # Initialize Agent
         agent = Agent.create(agent='configs/agent_config.json', environment=environment)
+    print(agent.model.policy.network.layers)
+    print(agent.model.policy.network.layers[0].input_spec)
+    print(agent.model.policy.network.layers[0].size)
+    print(agent.model.policy.network.layers[1].input_spec)
+    print(agent.model.policy.network.layers[1].size)
+    print(agent.model.policy.distributions)
 
     # Run the save loop
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
@@ -181,6 +192,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--steps", type=int, help="Add number of steps to train model")
     arg_parser.add_argument("--save", type=str, help="Add save file path")
     arg_parser.add_argument("--load", type=str, help="Add load file path")
+    arg_parser.add_argument("--verbose", help="Slow mode to diagnose decisions", action="store_true")
 
     #Process these flags
     flags = arg_parser.parse_args()
