@@ -9,6 +9,7 @@ from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
+from network import custom_network
 from tensorforce.environments import Environment
 from tensorforce.agents import Agent
 from f1tenth_gym_ros.msg import RaceInfo
@@ -21,7 +22,7 @@ from f1tenth_gym_ros.msg import RaceInfo
 class State:
     def __init__(self):
         #initialize state with empty variables
-        self.cur_points = np.zeros((1080,2))
+        self.line_scan = np.zeros(1080)
         #x, y, theta, velocity, angular_vel
         #are odometry variables
         #x, y is car's position on the map
@@ -54,38 +55,29 @@ class State:
 #collision detection function
 #returns true if it determines the car has crashed
 #this will be used to trigger a simulator reset
-def col_detect(state):
-    dist_threshold = state.configs["DIST_THR"]    #this is the threshold to determine if an object is
+def col_detect(main_state):
+    dist_threshold = main_state.configs["DIST_THR"]    #this is the threshold to determine if an object is
                             #so close as to hit the agent
-    v_threshold = state.configs["VEL_THR"]      #this is the threshold to determine if the agent is
+    v_threshold = main_state.configs["VEL_THR"]      #this is the threshold to determine if the agent is
                             #"stopped" or not
-    found = False
-    #this loop iterates over each point in the LaserScan and finds the distance
-    #if the distance is smaller than the threshold it updates the found variable
-    #TODO: can be streamlined with Numpy. Ok for now.
-    for point in state.cur_points:
-        x = point[0]
-        y = point[1]
-        dist = math.sqrt(x**2 + y**2)
-        if dist < dist_threshold :
-            found = True
+    found = np.any(np.less(main_state.line_scan, dist_threshold))
     #if none of the points are too close, no crash detected
     if found:
-        state.col_counter += 1
+        main_state.col_counter += 1
     else:
         #if no crash detected, reset the counter
-        state.col_counter = 0
+        main_state.col_counter = 0
 
     #if the agent is "stopped" increment counter, else reset it
-    if state.velocity < v_threshold:
-        state.v_counter += 1
+    if main_state.velocity < v_threshold:
+        main_state.v_counter += 1
     else:
-        state.v_counter = 0
+        main_state.v_counter = 0
 
     #This variable determines how many crash values must be found before a crash is declared
-    state.crash_det = ((state.col_counter > state.configs['CRASH_THR']) or (state.v_counter > state.configs['CRASH_THR']))
+    main_state.crash_det = ((main_state.col_counter > main_state.configs['CRASH_THR']) or (main_state.v_counter > main_state.configs['CRASH_THR']))
 
-    return state.crash_det
+    return main_state.crash_det
 
         
 
@@ -132,23 +124,25 @@ def train(flags):
     environment = PD_Environment(reset_announce, drive_announce, main_state)
     environment.publish_markers()
 
+    # Initialize Agent
+    agent = Agent.create(agent="ppo", network=custom_network(),
+        batch_size = 5,
+        environment=environment, max_episode_timesteps=2000)
     if(flags.load):
-        agent = Agent.load(directory=flags.load,environment=environment)
+        agent = Agent.load(directory=flags.load,environment=environment, agent=agent)
         print("Agent loaded from "+flags.load)
-    else:
-        # Initialize Agent
-        agent = Agent.create(agent='configs/agent_config.json', environment=environment)
-    print(agent.model.policy.network.layers)
-    print(agent.model.policy.network.layers[0].input_spec)
-    print(agent.model.policy.network.layers[0].size)
-    print(agent.model.policy.network.layers[1].input_spec)
-    print(agent.model.policy.network.layers[1].size)
-    print(agent.model.policy.distributions)
+    #Steps to output the default network configuration
+    #print(agent.model.policy.network.layers)
+    #print(agent.model.policy.network.layers[0].input_spec)
+    #print(agent.model.policy.network.layers[0].size)
+    #print(agent.model.policy.network.layers[1].input_spec)
+    #print(agent.model.policy.network.layers[1].size)
+    #print(agent.model.policy.distributions)
 
     # Run the save loop
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
         run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 10000, False)
-        agent.save(save_file, format="hdf5", append="episodes")
+        agent.save(save_file, format="checkpoint", append="episodes")
 
 #Train for n episodes
 def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):

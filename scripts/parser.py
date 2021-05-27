@@ -4,21 +4,24 @@ import numpy as np
 import math
 
 
+#def laser_parser(scan_data, state):
+#    #Assembles all points detected by LiDAR in an array
+#    #Each point described by x,y coordinates
+#    #These coordinates are from the perspective of the car
+#    #These two callbacks are called by ROS to update the state
+#    laser_points = []
+#    ranges = scan_data.ranges
+#    angle_min = scan_data.angle_min
+#    angle_max = scan_data.angle_max
+#    angle_increment = scan_data.angle_increment
+#    for i in range(len(ranges)):
+#        x = ranges[i] * math.sin(angle_min + i * angle_increment)
+#        y = ranges[i] * math.cos(angle_min + i * angle_increment)
+#        laser_points.append([x, y])
+#    state.cur_points = np.asarray(laser_points)
+
 def laser_parser(scan_data, state):
-    #Assembles all points detected by LiDAR in an array
-    #Each point described by x,y coordinates
-    #These coordinates are from the perspective of the car
-    #These two callbacks are called by ROS to update the state
-    laser_points = []
-    ranges = scan_data.ranges
-    angle_min = scan_data.angle_min
-    angle_max = scan_data.angle_max
-    angle_increment = scan_data.angle_increment
-    for i in range(len(ranges)):
-        x = ranges[i] * math.sin(angle_min + i * angle_increment)
-        y = ranges[i] * math.cos(angle_min + i * angle_increment)
-        laser_points.append([x, y])
-    state.cur_points = np.asarray(laser_points)
+    state.line_scan = np.asarray(scan_data.ranges)
 
 def odom_parser(data, state):
     #data is the odom message from ROS
@@ -44,5 +47,8 @@ def assemble_state(main_state):
         main_state.velocity,
         main_state.angular_vel
     ])
-    cur_state = np.concatenate((cur_state, np.reshape(main_state.cur_points, 2160)))
+    cur_state = {
+        'odom': cur_state,
+        'laser_scan': main_state.line_scan
+    }
     return cur_state

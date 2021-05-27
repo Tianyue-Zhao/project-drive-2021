@@ -10,9 +10,6 @@ from std_msgs.msg import Bool
 from f1tenth_gym_ros.msg import RaceInfo
 from tensorforce import Environment
 
-# TODO: consider moving these parameters to train.py
-# time delay to get next step. In seconds
-NEXT_STATE_DELAY = 0.1
 # dummpy control topic
 CONTROL_TOPIC = "/drive"
 # dummy odom topic
@@ -29,8 +26,12 @@ class PD_Environment(Environment):
     def __init__(self, RS_pub, D_pub, main_state):
         self.RS = RS_pub
         self.D = D_pub
+        #Length of time step in seconds
+        #Option to run slowly for verbose mode
         if(main_state.verbose):
             NEXT_STATE_DELAY = 1.0
+        else:
+            NEXT_STATE_DELAY = 0.01
         # next state of the agent after taking an action
         self.main_state = main_state
         # ros rate that controls the frequency of reading messages.
@@ -182,7 +183,10 @@ class PD_Environment(Environment):
         return cur_state, terminal, reward
 
     def states(self):
-        return {'type': 'float', 'shape': (2165,)}
+        return {
+            'odom': {'type':'float', 'shape':[5]},
+            'laser_scan': {'type':'float', 'shape':[1080]}
+        }
 
     # This should override whatever default close function these is
     # Publish a message for the simulator to reset, and wait
@@ -194,6 +198,8 @@ class PD_Environment(Environment):
         super().close()
 
     def reset(self):
+        #Print the episode reward
+        print("Episode total reward: "+str(self.main_state.ep_reward))
         message = Bool()
         message.data = True
         self.RS.publish(message)
