@@ -7,6 +7,7 @@ import argparse
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
+from visualization_msgs.msg import Marker
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
 from network import custom_network
@@ -51,6 +52,8 @@ class State:
         self.cur_distance = 0.0
         #Give configuration to tf_environment
         self.verbose = False
+        #Publisher for distribution display
+        self.st_display_pub = 0.0
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -101,6 +104,7 @@ def train(flags):
     info_listen = rospy.Subscriber(main_state.configs['INFO_TOPIC'], RaceInfo, parser.info_parser, main_state, queue_size=1)
     drive_announce = rospy.Publisher(main_state.configs['CONTROL_TOPIC'], AckermannDriveStamped, queue_size=1)
     reset_announce = rospy.Publisher(main_state.configs['RESET_TOPIC'], Bool, queue_size=1)
+    main_state.st_display_pub = rospy.Publisher(main_state.configs['ST_DISPLAY_TOPIC'], Marker, queue_size=10)
     #Publish True to reset_announce to reset the simulator
 
     #Accept flag params
@@ -127,7 +131,8 @@ def train(flags):
     # Initialize Agent
     agent = Agent.create(agent="ppo", network=custom_network(),
         batch_size = 5,
-        environment=environment, max_episode_timesteps=2000)
+        environment=environment, max_episode_timesteps=2000,
+        tracking="all")
     if(flags.load):
         agent = Agent.load(directory=flags.load,environment=environment, agent=agent)
         print("Agent loaded from "+flags.load)
@@ -146,6 +151,8 @@ def train(flags):
 
 #Train for n episodes
 def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):
+    #Define the tracking tensor names
+    ST_TENSOR = 'agent/policy/turning_angle_distribution/probabilities'
     #Run through each episode
     for i in range(num_episodes):
         num_steps = 0
@@ -160,6 +167,9 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
         while not done and num_steps < max_step_per_epi:
             num_steps +=1
             actions = agent.act(states=states)
+            print(agent.tracked_tensors())
+            all_probs = agent.tracked_tensors()
+            publish_steering_prob(all_probs[ST_TENSOR], main_state.st_display_pub)
             states, done, reward = environment.execute(actions=actions)
             col_detect(main_state)
             if(num_steps<10):

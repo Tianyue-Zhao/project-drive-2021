@@ -1,5 +1,6 @@
 from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
+from visualization_msgs.msg import Marker
 import numpy as np
 import math
 
@@ -52,3 +53,35 @@ def assemble_state(main_state):
         'laser_scan': main_state.line_scan
     }
     return cur_state
+
+def publish_steering_prob(steering_prob, st_display_pub):
+    choice = steering_prob.argmax()
+    y_offset = -0.2
+    width = 0.2
+    for i in range(steering_prob.shape):
+        marker_msg = Marker()
+        marker_msg.header.frame_id = "ego_racecar"
+        marker_msg.header.stamp = rospy.Time.now()
+        marker_msg.ns = "st_probs"
+        marker_msg.id = i
+        marker_msg.type = 1
+        marker_msg.action = 0
+        marker_msg.pose.position.x = width((steering_prob/2)-i+0.5)
+        marker_msg.pose.position.y = y_offset
+        marker_msg.pose.position.z = 0
+        marker_msg.pose.orientation.x = 0.0
+        marker_msg.pose.orientation.y = 0.0
+        marker_msg.pose.orientation.z = 0.0
+        marker_msg.scale.x = width
+        marker_msg.scale.y = steering_prob(i)
+        marker_msg.scale.z = 0.1
+        marker_msg.color.a = 1.0
+        if(i==choice):
+            marker_msg.color.r = 0
+            marker_msg.color.g = 1.0
+            marker_msg.color.b = 0
+        else:
+            marker_msg.color.r = 1.0
+            marker_msg.color.g = 0
+            marker_msg.color.b = 1.0
+        st_display_pub.publish(marker_msg)

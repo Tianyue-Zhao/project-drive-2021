@@ -10,10 +10,8 @@ from std_msgs.msg import Bool
 from f1tenth_gym_ros.msg import RaceInfo
 from tensorforce import Environment
 
-# dummpy control topic
+# Topic to control car
 CONTROL_TOPIC = "/drive"
-# dummy odom topic
-ODOM_TOPIC = "/odom"
 # dummy frame ID
 DRIVE_FRAME = "drive"
 
