@@ -167,9 +167,8 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
         while not done and num_steps < max_step_per_epi:
             num_steps +=1
             actions = agent.act(states=states)
-            print(agent.tracked_tensors())
             all_probs = agent.tracked_tensors()
-            publish_steering_prob(all_probs[ST_TENSOR], main_state.st_display_pub)
+            parser.publish_steering_prob(all_probs[ST_TENSOR], main_state.st_display_pub)
             states, done, reward = environment.execute(actions=actions)
             col_detect(main_state)
             if(num_steps<10):

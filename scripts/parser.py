@@ -2,24 +2,7 @@ from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
 from visualization_msgs.msg import Marker
 import numpy as np
-import math
-
-
-#def laser_parser(scan_data, state):
-#    #Assembles all points detected by LiDAR in an array
-#    #Each point described by x,y coordinates
-#    #These coordinates are from the perspective of the car
-#    #These two callbacks are called by ROS to update the state
-#    laser_points = []
-#    ranges = scan_data.ranges
-#    angle_min = scan_data.angle_min
-#    angle_max = scan_data.angle_max
-#    angle_increment = scan_data.angle_increment
-#    for i in range(len(ranges)):
-#        x = ranges[i] * math.sin(angle_min + i * angle_increment)
-#        y = ranges[i] * math.cos(angle_min + i * angle_increment)
-#        laser_points.append([x, y])
-#    state.cur_points = np.asarray(laser_points)
+import rospy
 
 def laser_parser(scan_data, state):
     state.line_scan = np.asarray(scan_data.ranges)
@@ -56,24 +39,25 @@ def assemble_state(main_state):
 
 def publish_steering_prob(steering_prob, st_display_pub):
     choice = steering_prob.argmax()
-    y_offset = -0.2
+    y_offset = 0.8
     width = 0.2
-    for i in range(steering_prob.shape):
+    num_choices = steering_prob.shape[0]
+    for i in range(num_choices):
         marker_msg = Marker()
-        marker_msg.header.frame_id = "ego_racecar"
+        marker_msg.header.frame_id = "ego_racecar/base_link"
         marker_msg.header.stamp = rospy.Time.now()
         marker_msg.ns = "st_probs"
         marker_msg.id = i
         marker_msg.type = 1
         marker_msg.action = 0
-        marker_msg.pose.position.x = width((steering_prob/2)-i+0.5)
-        marker_msg.pose.position.y = y_offset
+        marker_msg.pose.position.x = y_offset
+        marker_msg.pose.position.y = width*((num_choices/2)-i+0.5)
         marker_msg.pose.position.z = 0
         marker_msg.pose.orientation.x = 0.0
         marker_msg.pose.orientation.y = 0.0
         marker_msg.pose.orientation.z = 0.0
-        marker_msg.scale.x = width
-        marker_msg.scale.y = steering_prob(i)
+        marker_msg.scale.x = steering_prob[i]*1.2
+        marker_msg.scale.y = width
         marker_msg.scale.z = 0.1
         marker_msg.color.a = 1.0
         if(i==choice):
