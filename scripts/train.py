@@ -47,6 +47,7 @@ class State:
         self.num_waypoints = 0
         self.turn_back = False
         self.ep_reward = 0.0
+        self.default_reward = 0.0
         #Apr 28 addition of continuous rewards
         self.prev_distance = 0.0
         self.cur_distance = 0.0
@@ -54,6 +55,7 @@ class State:
         self.verbose = False
         #Publisher for distribution display
         self.st_display_pub = 0.0
+        self.entropy_reg = 0.0
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -118,6 +120,12 @@ def train(flags):
         save_file = main_state.configs["MODEL_DIR"]
     if(flags.verbose):
         main_state.verbose = True
+    if(not flags.lap_time):
+        main_state.default_reward = 0.01
+    if(flags.entropy):
+        main_state.entropy_reg = flags.entropy
+    else:
+        main_state.entropy_reg = main_state.configs["DEF_ENTROPY"]
     #TODO: implement load functionality
 
     # Initialize environment
@@ -130,11 +138,17 @@ def train(flags):
 
     # Initialize Agent
     agent = Agent.create(agent="ppo", network=custom_network(),
-        batch_size = 5,
+        batch_size = 5, entropy_regularization = main_state.entropy_reg,
         environment=environment, max_episode_timesteps=2000,
+        learning_rate = 0.002,
         tracking="all")
     if(flags.load):
-        agent = Agent.load(directory=flags.load,environment=environment, agent=agent)
+        files = flags.load.split('/')
+        if(len(files)>1):
+            agent = Agent.load(directory=files[0], filename=files[1], environment=environment,
+                agent=agent)
+        else:
+            agent = Agent.load(directory=flags.load,environment=environment, agent=agent)
         print("Agent loaded from "+flags.load)
     #Steps to output the default network configuration
     #print(agent.model.policy.network.layers)
@@ -196,6 +210,10 @@ if __name__ == "__main__":
     arg_parser.add_argument("--save", type=str, help="Add save file path")
     arg_parser.add_argument("--load", type=str, help="Add load file path")
     arg_parser.add_argument("--verbose", help="Slow mode to diagnose decisions", action="store_true")
+    #Option to focus on lap time and stop giving rewards for each time step
+    arg_parser.add_argument("--lap_time", help="Mode to focus on lap time", action="store_true")
+    #Option to adjust the entropy regularization term. Higher value encourages exploration.
+    arg_parser.add_argument("--entropy", type=float, help="Entropy regularization term")
 
     #Process these flags
     flags = arg_parser.parse_args()

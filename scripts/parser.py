@@ -51,7 +51,7 @@ def publish_steering_prob(steering_prob, st_display_pub):
         marker_msg.type = 1
         marker_msg.action = 0
         marker_msg.pose.position.x = y_offset
-        marker_msg.pose.position.y = width*((num_choices/2)-i+0.5)
+        marker_msg.pose.position.y = -width*((num_choices/2)-i+0.5)
         marker_msg.pose.position.z = 0
         marker_msg.pose.orientation.x = 0.0
         marker_msg.pose.orientation.y = 0.0

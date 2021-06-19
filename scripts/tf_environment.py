@@ -27,7 +27,7 @@ class PD_Environment(Environment):
         #Length of time step in seconds
         #Option to run slowly for verbose mode
         if(main_state.verbose):
-            NEXT_STATE_DELAY = 1.0
+            NEXT_STATE_DELAY = 0.25
         else:
             NEXT_STATE_DELAY = 0.01
         # next state of the agent after taking an action
@@ -238,10 +238,12 @@ class PD_Environment(Environment):
                 #print("Distance delta: "+str(self.main_state.prev_distance - self.main_state.cur_distance))
                 reward = (self.main_state.prev_distance - self.main_state.cur_distance) * 10
             else:
-                reward = 0.01
+                reward = self.main_state.default_reward
 
         if lap_finished:
-            reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])
+            #reward = np.exp(-lap_time/self.main_state.configs["RW_MLT"])
+            reward = (40-lap_time)*self.main_state.configs["RW_MULT"]
+            print(lap_time)
         elif(self.main_state.crash_det):
             reward = -1
 
