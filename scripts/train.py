@@ -56,6 +56,8 @@ class State:
         #Publisher for distribution display
         self.st_display_pub = 0.0
         self.entropy_reg = 0.0
+        #Action taken for the action distribution
+        self.cur_steer = 0
 
 #collision detection function
 #returns true if it determines the car has crashed
@@ -182,7 +184,8 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
             num_steps +=1
             actions = agent.act(states=states)
             all_probs = agent.tracked_tensors()
-            parser.publish_steering_prob(all_probs[ST_TENSOR], main_state.st_display_pub)
+            parser.publish_steering_prob(all_probs[ST_TENSOR],
+                main_state.st_display_pub, main_state.cur_steer)
             states, done, reward = environment.execute(actions=actions)
             col_detect(main_state)
             if(num_steps<10):

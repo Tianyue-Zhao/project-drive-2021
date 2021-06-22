@@ -37,8 +37,7 @@ def assemble_state(main_state):
     }
     return cur_state
 
-def publish_steering_prob(steering_prob, st_display_pub):
-    choice = steering_prob.argmax()
+def publish_steering_prob(steering_prob, st_display_pub, cur_steer):
     y_offset = 0.8
     width = 0.2
     num_choices = steering_prob.shape[0]
@@ -60,7 +59,7 @@ def publish_steering_prob(steering_prob, st_display_pub):
         marker_msg.scale.y = width
         marker_msg.scale.z = 0.1
         marker_msg.color.a = 1.0
-        if(i==choice):
+        if(i==cur_steer):
             marker_msg.color.r = 0
             marker_msg.color.g = 1.0
             marker_msg.color.b = 0

@@ -138,6 +138,7 @@ class PD_Environment(Environment):
         #print(actions)
         self.get_next_state(actions)
         cur_state = parser.assemble_state(self.main_state)
+        self.main_state.cur_steer = actions["turning_angle"]
 
         #Decide which waypoint the car is currently at
         location = np.asarray((self.main_state.x, self.main_state.y))
