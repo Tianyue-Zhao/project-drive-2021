@@ -236,7 +236,7 @@ class PD_Environment(Environment):
         if(self.main_state.cur_waypoint == self.main_state.prev_waypoint):
             if(self.main_state.prev_distance!=0.0):
                 #print("Distance delta: "+str(self.main_state.prev_distance - self.main_state.cur_distance))
-                reward = (self.main_state.prev_distance - self.main_state.cur_distance) * 10
+                reward = (self.main_state.prev_distance - self.main_state.cur_distance) * 5
             else:
                 reward = self.main_state.default_reward
 

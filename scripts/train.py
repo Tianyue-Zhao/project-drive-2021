@@ -141,7 +141,7 @@ def train(flags):
         batch_size = 5, entropy_regularization = main_state.entropy_reg,
         environment=environment, max_episode_timesteps=2000,
         learning_rate = 0.002,
-        tracking="all")
+        tracking="all", summarizer=main_state.configs["SUM_DIR"])
     if(flags.load):
         files = flags.load.split('/')
         if(len(files)>1):
