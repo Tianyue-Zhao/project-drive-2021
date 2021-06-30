@@ -117,7 +117,7 @@ class PD_Environment(Environment):
             ack_msg.header.stamp = rospy.Time.now()
             ack_msg.header.frame_id = DRIVE_FRAME
             ack_msg.drive.steering_angle = steer_ang
-            ack_msg.drive.speed = vel
+            ack_msg.drive.speed = 3.0
             self.ack_pub.publish(ack_msg)
             # use ros rate to wait for 0.5 sec before reading the next odometry
             # reading is automatically handled by odom_callback.
