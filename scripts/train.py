@@ -3,6 +3,7 @@ import math
 import rospy
 import parser
 import json
+import time
 import argparse
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
@@ -143,8 +144,8 @@ def train(flags):
         batch_size = 5, entropy_regularization = main_state.entropy_reg,
         environment=environment, max_episode_timesteps=2000,
         learning_rate = 0.002,
-        tracking="all")
-        #tracking="all", summarizer=main_state.configs["SUM_DIR"])
+        #tracking="all")
+        tracking="all", summarizer=main_state.configs["SUM_DIR"])
     if(flags.load):
         files = flags.load.split('/')
         if(len(files)>1):
@@ -183,6 +184,8 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
         #Run through the episode
         while not done and num_steps < max_step_per_epi:
             num_steps +=1
+            if(main_state.verbose):
+                start_time = time.time()
             actions = agent.act(states=states)
             all_probs = agent.tracked_tensors()
             parser.publish_steering_prob(all_probs[ST_TENSOR],
@@ -199,6 +202,8 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
             #Only update model if not testing
             if not test:
                 agent.observe(terminal=done, reward=reward)
+            if(main_state.verbose):
+                print("Step decision: "+str(time.time() - start_time))
 
         print("Episode {} done after {}".format(i,num_steps))
 

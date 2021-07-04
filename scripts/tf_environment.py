@@ -27,9 +27,9 @@ class PD_Environment(Environment):
         #Length of time step in seconds
         #Option to run slowly for verbose mode
         if(main_state.verbose):
-            NEXT_STATE_DELAY = 0.25
+            NEXT_STATE_DELAY = main_state.configs['VB_RATE']
         else:
-            NEXT_STATE_DELAY = 0.01
+            NEXT_STATE_DELAY = main_state.configs['TRAIN_RATE']
         # next state of the agent after taking an action
         self.main_state = main_state
         # ros rate that controls the frequency of reading messages.
@@ -110,14 +110,14 @@ class PD_Environment(Environment):
         # TODO: FIgure out better way to choose actions.
         #vel = actions["velocity"][random.randint(0, NUM_VEL_CHOICES - 1)]
         #steer_ang = actions["turning_angle"][random.randint(0, NUM_TURN_ANG - 1)]
-        vel = self.agent_actions["velocity"][actions["velocity"]]
+        vel = self.agent_actions["velocity"][1-actions["velocity"]]
         steer_ang = self.agent_actions["turning_angle"][actions["turning_angle"]]
         for i in range(5):
             ack_msg = AckermannDriveStamped()
             ack_msg.header.stamp = rospy.Time.now()
             ack_msg.header.frame_id = DRIVE_FRAME
             ack_msg.drive.steering_angle = steer_ang
-            ack_msg.drive.speed = 3.0
+            ack_msg.drive.speed = vel
             self.ack_pub.publish(ack_msg)
             # use ros rate to wait for 0.5 sec before reading the next odometry
             # reading is automatically handled by odom_callback.
