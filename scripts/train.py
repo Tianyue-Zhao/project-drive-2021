@@ -1,5 +1,4 @@
 import numpy as np
-import math
 import rospy
 import parser
 import json
@@ -129,7 +128,6 @@ def train(flags):
         main_state.entropy_reg = flags.entropy
     else:
         main_state.entropy_reg = main_state.configs["DEF_ENTROPY"]
-    #TODO: implement load functionality
 
     # Initialize environment
     # TODO: Define max_episode_timesteps from CONFIG file
@@ -154,13 +152,7 @@ def train(flags):
         else:
             agent = Agent.load(directory=flags.load,environment=environment, agent=agent)
         print("Agent loaded from "+flags.load)
-    #Steps to output the default network configuration
-    #print(agent.model.policy.network.layers)
-    #print(agent.model.policy.network.layers[0].input_spec)
-    #print(agent.model.policy.network.layers[0].size)
-    #print(agent.model.policy.network.layers[1].input_spec)
-    #print(agent.model.policy.network.layers[1].size)
-    #print(agent.model.policy.distributions)
+    #The agent network configuration could be printed with agent.get_architecture()
 
     # Run the save loop
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):

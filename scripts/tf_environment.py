@@ -36,8 +36,7 @@ class PD_Environment(Environment):
         self.rate = rospy.Rate(1.0 / NEXT_STATE_DELAY)
         # Actions to be taken by agent, containing two categories of actions:
         # velocity and turning angles.
-        # TODO: consider other formats for actions
-        self.agent_actions = self.action_values()
+        self.agent_actions = action_values(main_state.configs)
         # publisher for velocity and turning angles
         self.ack_pub = rospy.Publisher(
             CONTROL_TOPIC, AckermannDriveStamped, queue_size=1
@@ -58,29 +57,6 @@ class PD_Environment(Environment):
         for i in range(self.num_waypoints):
             self.waypoints[i, :] *= self.resolution
             self.waypoints[i, :] += self.map_orig
-
-    def action_values(self):
-        """ Helper function that creates a dictionary of actions for the agent 
-        to choose from.
-
-        :return: dictionary of actions.
-        :rtype: dict of str : list (float)
-        """
-        agent_actions = {"velocity": [], "turning_angle": []}
-        # velocity and turn_ang are currently lists for convenience.
-        if(self.main_state.configs['NUM_VEL_CHOICES']==1):
-            agent_actions["velocity"] = [self.main_state.configs['VLOW']]
-        else:
-            vel_res = (self.main_state.configs['VHIGH']-self.main_state.configs['VLOW'])/self.main_state.configs['NUM_VEL_CHOICES']
-            agent_actions["velocity"] = np.arange(
-                self.main_state.configs['VLOW'], self.main_state.configs['VHIGH']+vel_res, vel_res).tolist()
-        ang_res = (self.main_state.configs['ANGR']-self.main_state.configs['ANGL'])/self.main_state.configs['NUM_TURN_ANG']
-        agent_actions["turning_angle"] = np.arange(
-            self.main_state.configs['ANGL'],
-            self.main_state.configs['ANGR']+ang_res,
-            ang_res).tolist()
-        print(agent_actions)
-        return agent_actions
 
     def actions(self):
         agent_actions = {"velocity":
@@ -283,3 +259,26 @@ class PD_Environment(Environment):
                 marker_msg.color.g = 0
                 marker_msg.color.b = 0
             self.marker_pub.publish(marker_msg)
+
+def action_values(configs):
+    """ Helper function that creates a dictionary of actions for the agent 
+    to choose from.
+
+    :return: dictionary of actions.
+    :rtype: dict of str : list (float)
+    """
+    agent_actions = {"velocity": [], "turning_angle": []}
+    # velocity and turn_ang are currently lists for convenience.
+    if(configs['NUM_VEL_CHOICES']==1):
+        agent_actions["velocity"] = [configs['VLOW']]
+    else:
+        vel_res = (configs['VHIGH']-configs['VLOW'])/configs['NUM_VEL_CHOICES']
+        agent_actions["velocity"] = np.arange(
+            configs['VLOW'], configs['VHIGH']+vel_res, vel_res).tolist()
+    ang_res = (configs['ANGR']-configs['ANGL'])/configs['NUM_TURN_ANG']
+    agent_actions["turning_angle"] = np.arange(
+        configs['ANGL'],
+        configs['ANGR']+ang_res,
+        ang_res).tolist()
+    print(agent_actions)
+    return agent_actions
