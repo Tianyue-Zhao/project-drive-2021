@@ -48,6 +48,7 @@ class State:
         self.turn_back = False
         self.ep_reward = 0.0
         self.default_reward = 0.0
+        self.ds_reward = False #Reward for approaching the next waypoint
         #Apr 28 addition of continuous rewards
         self.prev_distance = 0.0
         self.cur_distance = 0.0
@@ -128,6 +129,10 @@ def train(flags):
         main_state.entropy_reg = flags.entropy
     else:
         main_state.entropy_reg = main_state.configs["DEF_ENTROPY"]
+    if(flags.ds_reward):
+        main_state.ds_reward = True
+    else:
+        main_state.ds_reward = False
 
     # Initialize environment
     # TODO: Define max_episode_timesteps from CONFIG file
@@ -215,6 +220,8 @@ if __name__ == "__main__":
     arg_parser.add_argument("--lap_time", help="Mode to focus on lap time", action="store_true")
     #Option to adjust the entropy regularization term. Higher value encourages exploration.
     arg_parser.add_argument("--entropy", type=float, help="Entropy regularization term")
+    #Option to enable rewards for approaching the next waypoint, based on distance
+    arg_parser.add_argument("--ds_reward", help="Reward for approaching the next waypoint", action="store_true")
 
     #Process these flags
     flags = arg_parser.parse_args()
