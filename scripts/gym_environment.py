@@ -100,17 +100,19 @@ class Gym_Environment(Environment):
         }
         return cur_state
 
-
     """
     Execute the action and determine waypoint position
     """
     def execute(self, actions):
         #Execute the step in the gym environment
-        observation, reward, done, info = \
-            self.gym_env.step(np.asarray( \
-            [self.agent_actions['turning_angle'][actions['turning_angle']], \
-            self.agent_actions['velocity'][actions['velocity']]]))
-        self.steps += 1
+        for i in range(5):
+            observation, reward, done, info = \
+                self.gym_env.step(np.asarray( \
+                [self.agent_actions['turning_angle'][actions['turning_angle']], \
+                self.agent_actions['velocity'][actions['velocity']]]))
+            self.steps += 1
+            if(done):
+                break
         cur_state = self.translate_state(observation)
         #Done would only be true if crashed
         self.crashed = done
@@ -150,6 +152,7 @@ class Gym_Environment(Environment):
                 print("Turned_back, reset simulation")
             return -50
         
+        reward = 0.0
         if(self.cur_waypoint > self.prev_waypoint):
             reward = 100
             if(self.main_state.verbose):
@@ -167,4 +170,6 @@ class Gym_Environment(Environment):
                 print(self.steps * 0.01)
         elif(self.crashed):
             reward = -1
+        if(reward==0.0):
+            reward = self.main_state.default_reward
         return reward

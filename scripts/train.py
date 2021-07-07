@@ -10,9 +10,11 @@ from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
 from std_msgs.msg import Bool
 from tf_environment import PD_Environment
+from gym_environment import Gym_Environment
 from network import custom_network
 from tensorforce.environments import Environment
 from tensorforce.agents import Agent
+from tensorforce import Runner
 from f1tenth_gym_ros.msg import RaceInfo
 
 
@@ -92,7 +94,7 @@ def col_detect(main_state):
 #Parameters such as save path, steps to train
 #and load from path to be added later
 #Primary train function
-def train(flags):
+def train_GUI(flags):
     #Initialize node
     rospy.init_node("rl_algorithm", anonymous=True)
     #Initialize subscribers for laser and odom
@@ -163,6 +165,53 @@ def train(flags):
     for i in range(int((train_steps-1)/main_state.configs["SAVE_RUNS"])+1):
         run(environment, agent, main_state, main_state.configs["SAVE_RUNS"], 10000, False)
         agent.save(save_file, format="checkpoint", append="episodes")
+
+def train(flags):
+    main_state = State()
+    #Load config
+    config_file = open('configs/config.json')
+    main_state.configs = json.load(config_file)
+    config_file.close()
+    #Accept flag params
+    if(flags.steps):
+        train_steps = flags.steps
+    else:
+        train_steps = main_state.configs["NUM_RUNS_TOT"]
+    if(flags.save):
+        save_file = flags.save
+    else:
+        save_file = main_state.configs["MODEL_DIR"]
+    if(flags.verbose):
+        main_state.verbose = True
+    if(not flags.lap_time):
+        main_state.default_reward = 0.01
+    if(flags.entropy):
+        main_state.entropy_reg = flags.entropy
+    else:
+        main_state.entropy_reg = main_state.configs["DEF_ENTROPY"]
+    if(flags.ds_reward):
+        main_state.ds_reward = True
+    else:
+        main_state.ds_reward = False
+    #Initialize the agent
+    agent = Agent.create(agent="ppo", network=custom_network(),
+        batch_size = 10, entropy_regularization = main_state.entropy_reg)
+    if(flags.load):
+        files = flags.load.split('/')
+        if(len(files) > 1):
+            agent = Agent.load(directory = files[0], filename = files[1],\
+                environment = Gym_Environment, agent = agent)
+        else:
+            agent = Agent.load(directory = files[0], environment = Gym_Environment,\
+                agent = agent)
+    runner = Runner(agent = agent, environment = Gym_Environment, num_parallel = 2,\
+        remote = 'multiprocessing')
+    if(train_steps <= main_state.configs["SAVE_RUNS"]):
+        runner.run(num_episodes = train_steps, batch_agent_calls = True)
+    else:
+        for i in range(int((train_steps - 1) / main_state["SAVE_RUNS"]) + 1):
+            runner.run(num_episodes = main_state["SAVE_RUNS"], batch_agent_calls = True)
+            agent.save(save_file, format = "checkpoint", append = "episodes")
 
 #Train for n episodes
 def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):
