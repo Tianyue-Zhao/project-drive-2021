@@ -15,7 +15,7 @@ class Gym_Environment(Environment):
         #Initiate f1tenth_gym
         self.configs = main_state.configs
         self.main_state = main_state
-        self.gym_env = gym.make('f110_gym:f110-v0')
+        self.gym_env = gym.make('f110_gym:f110-v0', num_agents = 1)
         #Generate actions
         self.agent_actions = action_values(main_state.configs)
         #Load waypoints for accurate lap counting
@@ -68,7 +68,7 @@ class Gym_Environment(Environment):
     which is for most purposes 0,0
     """
     def reset(self):
-        self.gym_env.reset(np.zeros(2))
+        observation, reward, done, info = self.gym_env.reset(np.zeros((1,3)))
         self.cur_waypoint = 0
         self.prev_waypoint = 0
         self.cur_distance = 0.0
@@ -77,6 +77,7 @@ class Gym_Environment(Environment):
         self.crashed = False
         self.lap_finish = False
         self.steps = 0
+        return self.translate_state(observation)
     
     """
     Translate the f1tenth_gym state format
@@ -108,8 +109,8 @@ class Gym_Environment(Environment):
         for i in range(5):
             observation, reward, done, info = \
                 self.gym_env.step(np.asarray( \
-                [self.agent_actions['turning_angle'][actions['turning_angle']], \
-                self.agent_actions['velocity'][actions['velocity']]]))
+                [[self.agent_actions['turning_angle'][actions['turning_angle']], \
+                self.agent_actions['velocity'][actions['velocity']]]]))
             self.steps += 1
             if(done):
                 break
@@ -117,7 +118,7 @@ class Gym_Environment(Environment):
         #Done would only be true if crashed
         self.crashed = done
         #Determine the current waypoint
-        distances = self.waypoints - cur_state['odom'][0:3]
+        distances = self.waypoints - cur_state['odom'][0:2]
         distances = np.sum(np.square(distances), axis=1)
         cur_wp = np.argmin(distances)
         self.prev_waypoint = self.cur_waypoint

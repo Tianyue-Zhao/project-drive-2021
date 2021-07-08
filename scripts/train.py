@@ -193,18 +193,30 @@ def train(flags):
         main_state.ds_reward = True
     else:
         main_state.ds_reward = False
+    environments = list()
+    for i in range(2):
+        environments.append(Gym_Environment(main_state))
     #Initialize the agent
-    agent = Agent.create(agent="ppo", network=custom_network(),
+    agent = Agent.create(agent = "ppo", network = custom_network(),\
+        environment = environments[0], max_episode_timesteps=2000,\
+        parallel_interactions = 2,\
+        learning_rate = 0.002, summarizer = main_state.configs["SUM_DIR"],\
         batch_size = 10, entropy_regularization = main_state.entropy_reg)
     if(flags.load):
         files = flags.load.split('/')
         if(len(files) > 1):
             agent = Agent.load(directory = files[0], filename = files[1],\
-                environment = Gym_Environment, agent = agent)
+                max_episode_timesteps = 2000, learning_rate = 0.002,\
+                summarizer = main_state.configs["SUM_DIR"],\
+                batch_size = 10,\
+                environment = environments[0], agent = agent)
         else:
-            agent = Agent.load(directory = files[0], environment = Gym_Environment,\
+            agent = Agent.load(directory = files[0], environment = environments[0],\
+                max_episode_timesteps = 2000, learning_rate = 0.002,\
+                summarizer = main_state.configs["SUM_DIR"],\
+                batch_size = 10,\
                 agent = agent)
-    runner = Runner(agent = agent, environment = Gym_Environment, num_parallel = 2,\
+    runner = Runner(agent = agent, environments = environments, num_parallel = 2,\
         remote = 'multiprocessing')
     if(train_steps <= main_state.configs["SAVE_RUNS"]):
         runner.run(num_episodes = train_steps, batch_agent_calls = True)
