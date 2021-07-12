@@ -15,7 +15,7 @@ class Gym_Environment(Environment):
         #Initiate f1tenth_gym
         self.configs = main_state.configs
         self.main_state = main_state
-        self.gym_env = gym.make('f110_gym:f110-v0', num_agents = 1)
+        self.gym_env = gym.make('f110_gym:f110-v0', map='berlin', map_ext='.png', num_agents = 1)
         #Generate actions
         self.agent_actions = action_values(main_state.configs)
         #Load waypoints for accurate lap counting
@@ -107,10 +107,14 @@ class Gym_Environment(Environment):
     def execute(self, actions):
         #Execute the step in the gym environment
         for i in range(5):
+            #observation, reward, done, info = \
+            #    self.gym_env.step(np.asarray( \
+            #    [[self.agent_actions['turning_angle'][actions['turning_angle']], \
+            #    self.agent_actions['velocity'][actions['velocity']]]]))
             observation, reward, done, info = \
                 self.gym_env.step(np.asarray( \
                 [[self.agent_actions['turning_angle'][actions['turning_angle']], \
-                self.agent_actions['velocity'][actions['velocity']]]]))
+                3.0]]))
             self.steps += 1
             if(done):
                 break
