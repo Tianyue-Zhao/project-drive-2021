@@ -65,6 +65,8 @@ class State:
 #collision detection function
 #returns true if it determines the car has crashed
 #this will be used to trigger a simulator reset
+#This is used for testing and evaluation
+#along with the test() function
 def col_detect(main_state):
     dist_threshold = main_state.configs["DIST_THR"]    #this is the threshold to determine if an object is
                             #so close as to hit the agent
@@ -89,11 +91,75 @@ def col_detect(main_state):
 
     return main_state.crash_det
 
-        
+def test(flags):
+    rospy.init_node("rl_algorithm", anonymous = True)
+    main_state = State()
+    config_file = open('configs/config.json')
+    main_state.configs = json.load(config_file)
+    config_file.close()
+    #Publishers
+    drive_announce = rospy.Publisher(main_state.configs['CONTROL_TOPIC'], AckermannDriveStamped, queue_size=1)
+    reset_announce = rospy.Publisher(main_state.configs['RESET_TOPIC'], Bool, queue_size=1)
+    main_state.st_display_pub = rospy.Publisher(main_state.configs['ST_DISPLAY_TOPIC'], Marker, queue_size=10)
+
+    #Flags for testing
+    if(flags.steps):
+        test_steps = flags.steps
+    else:
+        print("The number of steps must be specified")
+        return
+    if(flags.verbose):
+        main_state.verbose = True
+
+    environment = PD_Environment(reset_announce, drive_announce, main_state)
+    environment.publish_markers()
+
+    #Initialize agent
+    #TODO: Consolidate into configs
+    agent = Agent.create(agent = "ppo", network = custom_network(),
+        batch_size = 5, environment = environment,
+        max_episode_timesteps = 2000, tracking = "all")
+    if(flags.load):
+        files = flags.laod.split('/')
+        if(len(files) > 1):
+            agent = Agent.load(directory = files[0], filename = files[1],
+                environment = environment, agent = agent)
+        else:
+            agent = Agent.load(directory = flags.load, environment = environment,
+                agent = agent)
+    else:
+        print("A load file must be specified")
+        return
+    
+    #Define the tracking tensor names
+    ST_TENSOR = 'agent/policy/turning_angle_distribution/probabilities'
+    for i in range(test_steps):
+        num_steps = 0
+        environment.reset()
+        states = parser.assemble_state(main_state)
+        done = False
+        main_state.crash_deet = False
+        main_state.lap_finish = False
+
+        while not done and num_steps < 2000:
+            num_steps += 1
+            actions = agent.act(states)
+            all_probs = agent.tracked_tensors()
+            parser.publish_steering_prob(all_probs[ST_TENSOR],
+                main_state.st_display_pub, main_state.cur_steer)
+            states, done, reward = environment.execute(actions = actions)
+            col_detect(main_state)
+            if(num_steps < 10):
+                done = False
+            if(main_state.crash_det):
+                print("Crashed")
+            if(main_state.lap_finish):
+                print("Lap finished")
+        print("Episode {} done after {}".format(i, num_steps))
 
 #Parameters such as save path, steps to train
 #and load from path to be added later
-#Primary train function
+#Now train() is used instead. The GUI is used for testing visualization
 def train_GUI(flags):
     #Initialize node
     rospy.init_node("rl_algorithm", anonymous=True)
@@ -235,7 +301,6 @@ def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=Fal
         num_steps = 0
         environment.reset()
         states = parser.assemble_state(main_state)
-        internals = agent.initial_internals()
         done = False
         main_state.crash_det = False
         main_state.lap_finish = False
@@ -273,6 +338,7 @@ if __name__ == "__main__":
     #Set flags
     #Prepare for later additions such as "--steps=1000" and so on
     arg_parser.add_argument("--train", help="Begin training model", action="store_true")
+    arg_parser.add_argument("--test", help="GUI Testing", action="store_true")
     arg_parser.add_argument("--run", help="Run program", action="store_true")
     arg_parser.add_argument("--steps", type=int, help="Add number of steps to train model")
     arg_parser.add_argument("--save", type=str, help="Add save file path")
@@ -291,4 +357,6 @@ if __name__ == "__main__":
     #Train model
     if flags.train:
         train(flags)
+    elif flags.test:
+        test(flags)
     
