@@ -101,6 +101,8 @@ def test(flags):
     drive_announce = rospy.Publisher(main_state.configs['CONTROL_TOPIC'], AckermannDriveStamped, queue_size=1)
     reset_announce = rospy.Publisher(main_state.configs['RESET_TOPIC'], Bool, queue_size=1)
     main_state.st_display_pub = rospy.Publisher(main_state.configs['ST_DISPLAY_TOPIC'], Marker, queue_size=10)
+    laser_listen = rospy.Subscriber(main_state.configs['LASER_TOPIC'], LaserScan, parser.laser_parser, main_state, queue_size=1)
+    odom_listen = rospy.Subscriber(main_state.configs['ODOM_TOPIC'], Odometry, parser.odom_parser, main_state, queue_size=1)
 
     #Flags for testing
     if(flags.steps):
@@ -117,10 +119,11 @@ def test(flags):
     #Initialize agent
     #TODO: Consolidate into configs
     agent = Agent.create(agent = "ppo", network = custom_network(),
-        batch_size = 5, environment = environment,
+        batch_size = 10, parallel_interactions = 8,
+        environment = environment,
         max_episode_timesteps = 2000, tracking = "all")
     if(flags.load):
-        files = flags.laod.split('/')
+        files = flags.load.split('/')
         if(len(files) > 1):
             agent = Agent.load(directory = files[0], filename = files[1],
                 environment = environment, agent = agent)
@@ -138,12 +141,12 @@ def test(flags):
         environment.reset()
         states = parser.assemble_state(main_state)
         done = False
-        main_state.crash_deet = False
+        main_state.crash_det = False
         main_state.lap_finish = False
 
         while not done and num_steps < 2000:
             num_steps += 1
-            actions = agent.act(states)
+            actions = agent.act(states, independent = True)
             all_probs = agent.tracked_tensors()
             parser.publish_steering_prob(all_probs[ST_TENSOR],
                 main_state.st_display_pub, main_state.cur_steer)
