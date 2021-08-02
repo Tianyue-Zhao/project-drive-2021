@@ -10,6 +10,8 @@ def custom_network():
     #Expected output (None, 104, 10)
     #10 Filters, each with kernel size 50, stride 10
     C1 = keras.layers.Conv1D(10, 50, strides=10, activation="relu")(PC)
+    #Add trainable specification for testing
+    #C1.trainable = False
     D3 = keras.layers.Dense(50, activation="relu")(C1)
     D3F = keras.layers.Flatten()(D3)
     Combined = keras.layers.Concatenate()([D3F, D2])
