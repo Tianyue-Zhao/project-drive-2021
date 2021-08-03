@@ -266,7 +266,8 @@ def train(flags):
     for i in range(8):
         environments.append(Gym_Environment(main_state))
     #Initialize the agent
-    agent = Agent.create(agent = "ppo", network = custom_network(),\
+    agent_network = custom_network()
+    agent = Agent.create(agent = "ppo", network = agent_network,\
         environment = environments[0], max_episode_timesteps=2000,\
         parallel_interactions = 8,\
         learning_rate = 0.002, summarizer = main_state.configs["SUM_DIR"],\
@@ -294,6 +295,10 @@ def train(flags):
         for i in range(int((train_steps - 1) / main_state.configs["SAVE_RUNS"]) + 1):
             runner.run(num_episodes = main_state.configs["SAVE_RUNS"], batch_agent_calls = True)
             agent.save(save_file, format = "checkpoint", append = "episodes")
+    agent_network.save_weights(main_state.configs["WEIGHT_DIR"]+"network_weights.h5")
+    direct_file = open(main_state.configs["WEIGHT_DIR"]+"network_weights.txt", 'w')
+    direct_file.write(str(agent_network.get_weights()))
+    direct_file.close()
 
 #Train for n episodes
 def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):
@@ -353,6 +358,9 @@ if __name__ == "__main__":
     arg_parser.add_argument("--entropy", type=float, help="Entropy regularization term")
     #Option to enable rewards for approaching the next waypoint, based on distance
     arg_parser.add_argument("--ds_reward", help="Reward for approaching the next waypoint", action="store_true")
+    #Option to use the Keras load weights by name option. Loads weights from
+    #a slightly different network for transfer learning
+    arg_parser.add_argument("--transfer_load", help="Load weights for transfer learning", action="store_true")
 
     #Process these flags
     flags = arg_parser.parse_args()
