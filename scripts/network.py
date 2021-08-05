@@ -17,10 +17,10 @@ def custom_network():
     D3 = keras.layers.Dense(50, activation="relu")(C1)
     D3F = keras.layers.Flatten()(D3)
     #Layers added for next waypoint
-    DW1 = keras.layers_Dense(5, activation="relu")(waypoint_input)
+    DW1 = keras.layers.Dense(5, activation="relu")(waypoint_input)
     Combined = keras.layers.Concatenate()([D3F, D2, DW1])
     #TODO: Find out how to load D4 manually as it has changed.
     #I'm guessing auto loading this causes an error
     D4 = keras.layers.Dense(20, activation="relu")(Combined)
-    network = keras.Model([odom_input, laser_input], D4)
+    network = keras.Model([odom_input, laser_input, waypoint_input], D4)
     return network
