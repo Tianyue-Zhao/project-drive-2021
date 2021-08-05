@@ -113,7 +113,7 @@ class PD_Environment(Environment):
         """
         #print(actions)
         self.get_next_state(actions)
-        cur_state = parser.assemble_state(self.main_state)
+        cur_state = parser.assemble_state(self.main_state, self.waypoints)
         self.main_state.cur_steer = actions["turning_angle"]
 
         #Decide which waypoint the car is currently at
@@ -124,9 +124,9 @@ class PD_Environment(Environment):
         self.main_state.prev_waypoint = self.main_state.cur_waypoint
         self.main_state.cur_waypoint = cur_wp
         #Decide the distance to the next waypoint
-        next_wp = (cur_wp+1)%self.main_state.num_waypoints
+        self.main_state.next_waypoint = (cur_wp+1)%self.main_state.num_waypoints
         self.main_state.prev_distance = self.main_state.cur_distance
-        self.main_state.cur_distance = distances[next_wp]
+        self.main_state.cur_distance = distances[self.main_state.next_waypoint]
 
         #Publish the waypoints again if the current waypoint had changed
         if(not self.main_state.prev_waypoint==self.main_state.cur_waypoint):
@@ -155,12 +155,14 @@ class PD_Environment(Environment):
         self.main_state.ep_reward += reward
         if(self.main_state.verbose):
             print("Episode accumulated reward: "+str(self.main_state.ep_reward))
+
         return cur_state, terminal, reward
 
     def states(self):
         return {
             'odom': {'type':'float', 'shape':[5]},
-            'laser_scan': {'type':'float', 'shape':[1080]}
+            'laser_scan': {'type':'float', 'shape':[1080]},
+            'next_waypoint': {'type':'float', 'shape':[2]}
         }
 
     # This should override whatever default close function these is
@@ -189,6 +191,7 @@ class PD_Environment(Environment):
         time.sleep(self.main_state.configs["RS_WAIT"])
         self.main_state.cur_waypoint = 0
         self.main_state.prev_waypoint = 0
+        self.main_state.next_waypoint = 1
         self.main_state.turn_back = False
         self.main_state.lap_finish = False
         self.main_state.ep_reward = 0.0

@@ -1,5 +1,6 @@
 import numpy as np
 import gym
+import parser
 from tensorforce import Environment
 from tf_environment import action_values
 
@@ -33,7 +34,8 @@ class Gym_Environment(Environment):
             self.waypoints[i, :] += self.map_orig
         #State variables
         self.cur_waypoint = 0
-        self.prev_waypoints = 0
+        self.prev_waypoint = 0
+        self.next_waypoint = 1
         self.odom = np.zeros(5)
         self.lap_finish = False
         self.turned_back = False
@@ -59,7 +61,8 @@ class Gym_Environment(Environment):
     def states(self):
         return {
             'odom': {'type':'float', 'shape':[5]},
-            'laser_scan': {'type':'float', 'shape':[1080]}
+            'laser_scan': {'type':'float', 'shape':[1080]},
+            'next_waypoint': {'type':'float', 'shape':[2]}
         }
     
     """
@@ -71,6 +74,7 @@ class Gym_Environment(Environment):
         observation, reward, done, info = self.gym_env.reset(np.zeros((1,3)))
         self.cur_waypoint = 0
         self.prev_waypoint = 0
+        self.next_waypoint = 1
         self.cur_distance = 0.0
         self.prev_distance = 0.0
         self.turned_back = False
@@ -95,9 +99,17 @@ class Gym_Environment(Environment):
             lin_vel,
             observation['ang_vels_z'][ego_id]
         ])
+        relative_waypoint = parser.relative_waypoint(np.asarray([
+            observation['poses_x'][ego_id],
+            observation['poses_y'][ego_id],
+            observation['poses_theta'][ego_id],
+            self.waypoints[self.next_waypoint, 0],
+            self.waypoints[self.next_waypoint, 1]
+        ]))
         cur_state = {
             'odom': odom,
-            'laser_scan': observation['scans'][ego_id]
+            'laser_scan': observation['scans'][ego_id],
+            'next_waypoint': relative_waypoint
         }
         return cur_state
 
@@ -128,9 +140,9 @@ class Gym_Environment(Environment):
         self.prev_waypoint = self.cur_waypoint
         self.cur_waypoint = cur_wp
         #Decide distance to next waypoint for reward shaping
-        next_wp = (cur_wp + 1) % self.num_waypoints
+        self.next_waypoint = (cur_wp + 1) % self.num_waypoints
         self.prev_distance = self.cur_distance
-        self.cur_distance = distances[next_wp]
+        self.cur_distance = distances[self.next_waypoint]
 
         #Check if lap finished
         if((self.cur_waypoint == 0)\

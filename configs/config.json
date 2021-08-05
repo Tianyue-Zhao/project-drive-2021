@@ -13,7 +13,7 @@
     "NUM_RUNS_TOT": 20,
     "SAVE_RUNS": 100,
     "MODEL_DIR": "models/",
-    "WEIGHT_DIR": "models/network_weights/",
+    "WEIGHT_DIR": "models/network_weights.h5",
     "SUM_DIR": "tensorboard_log",
     "LASER_TOPIC": "/scan",
     "ODOM_TOPIC": "/odom",

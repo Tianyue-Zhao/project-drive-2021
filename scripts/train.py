@@ -46,6 +46,7 @@ class State:
         #Lap counting with waypoints
         self.prev_waypoint = 0
         self.cur_waypoint = 0
+        self.next_waypoint = 1
         self.num_waypoints = 0
         self.turn_back = False
         self.ep_reward = 0.0
@@ -286,6 +287,8 @@ def train(flags):
                 summarizer = main_state.configs["SUM_DIR"],\
                 batch_size = 10,\
                 agent = agent)
+    elif(flags.transfer_load):
+        agent_network.load_weights(main_state.configs["WEIGHT_DIR"], by_name = True)
     runner = Runner(agent = agent, environments = environments, num_parallel = 8,\
         remote = 'multiprocessing')
     if(train_steps <= main_state.configs["SAVE_RUNS"]):
@@ -295,10 +298,11 @@ def train(flags):
         for i in range(int((train_steps - 1) / main_state.configs["SAVE_RUNS"]) + 1):
             runner.run(num_episodes = main_state.configs["SAVE_RUNS"], batch_agent_calls = True)
             agent.save(save_file, format = "checkpoint", append = "episodes")
-    agent_network.save_weights(main_state.configs["WEIGHT_DIR"]+"network_weights.h5")
-    direct_file = open(main_state.configs["WEIGHT_DIR"]+"network_weights.txt", 'w')
-    direct_file.write(str(agent_network.get_weights()))
-    direct_file.close()
+    if(not flags.transfer_load):
+        agent_network.save_weights(main_state.configs["WEIGHT_DIR"])
+    #direct_file = open(main_state.configs["WEIGHT_DIR"]+"network_weights.txt", 'w')
+    #direct_file.write(str(agent_network.get_weights()))
+    #direct_file.close()
 
 #Train for n episodes
 def run(environment, agent, main_state, num_episodes, max_step_per_epi, test=False):

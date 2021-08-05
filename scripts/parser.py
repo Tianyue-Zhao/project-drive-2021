@@ -23,7 +23,10 @@ def odom_parser(data, state):
 def info_parser(data, state):
     state.lap_time = data.ego_elapsed_time
 
-def assemble_state(main_state):
+#Assembles the state for Tensorforce from main_state
+#tf_environment and by extention evaluation uses this
+#Training currently uses gym_environment.translate_state
+def assemble_state(main_state, waypoints):
     cur_state = np.asarray([
         main_state.x,
         main_state.y,
@@ -31,11 +34,27 @@ def assemble_state(main_state):
         main_state.velocity,
         main_state.angular_vel
     ])
+    relative_waypoint = relative_waypoint(np.asarray([
+        main_state.x, main_state.y, main_state.theta,
+        waypoints[main_state.next_waypoint,0],
+        waypoints[main_state.next_waypoint,1]
+        ]))
     cur_state = {
         'odom': cur_state,
-        'laser_scan': main_state.line_scan
+        'laser_scan': main_state.line_scan,
+        'next_waypoint': relative_waypoint
     }
     return cur_state
+
+#Translates the next waypoint into relative to the car
+#input_arr: car x - car y - car theta - waypoint x - waypoint y
+#Outputs the relative coordinates in x - y
+def relative_waypoint(input_arr):
+    relative_x = input_arr[3] - input_arr[0]
+    relative_y = input_arr[4] - input_arr[1]
+    relative_theta = np.arctan2(relative_y, relative_x) - input_arr[2]
+    distance = np.sqrt(np.sum(np.square(relative_x) + np.square(relative_y)))
+    return np.asarray([np.cos(relative_theta) * distance, np.sin(relative_theta) * distance])
 
 def publish_steering_prob(steering_prob, st_display_pub, cur_steer):
     y_offset = 0.8
